@@ -1,0 +1,17 @@
+{
+   "private": true,
+   "dependencies": {
+      "chart.js": "^3.0.0-alpha",
+      "common-tags": "^1.8.0",
+      "moment": "^2.24.0"
+   },
+   "devDependencies": {
+      "@types/chart.js": "^2.9.19",
+      "@types/common-tags": "^1.8.0",
+      "rollup": "^2.6.0",
+      "rollup-plugin-node-resolve": "^5.2.0"
+   },
+   "scripts": {
+      "build": "tsc && rollup -c"
+   }
+}

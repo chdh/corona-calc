@@ -1,0 +1,168 @@
+*, *:before, *:after {
+   box-sizing: inherit; }
+
+html {
+   font-size: 14px;
+   box-sizing: border-box; }
+
+body, button, input, select, textarea {
+   font-family: Lato, sans-serif;
+   font-size: inherit;
+   line-height: 1.4375; }
+
+body {
+   margin: 20px; }
+
+H1 {
+   font-size: 22px; }
+
+a {
+   color: #07C;
+   text-decoration: none; }
+a:hover {
+   text-decoration: underline; }
+.pseudoButton,
+.miniPseudoButton {
+   color: #07C;
+   cursor: pointer; }
+.miniPseudoButton {
+   font-size: 12px; }
+
+div.footer {
+   margin-top: 8px;
+   font-size: 12px; }
+
+code,
+.code {
+   font-family: Consolas, monospace; }
+code {
+   background-color: #eff0f1; }
+
+input[type="text"], input[type="number"] {
+   padding: 1px 2px; }
+
+input[type="number"]::-webkit-inner-spin-button {
+   -webkit-appearance: none; }
+input[type="number"] {
+   -moz-appearance: textfield; }
+input[type="text"]:invalid:not(:focus), input[type="number"]:invalid:not(:focus) {
+   box-shadow: 0 0 1px 1px #f00; }
+
+input[type="text"]:focus, input[type="number"]:focus, select:focus, canvas:focus {
+   outline: 1px auto #4D90FE; }
+
+.hidden {
+   display: none !important; }
+
+.parmBlock {
+   margin-bottom: 10px; }
+
+.parmLine {
+   display: flex;
+   align-items: baseline;
+   margin-top: 8px; }
+
+div.parmLine input[type="checkbox"] {
+   margin-left: 0; }
+
+div.parmHeading2 {
+   margin-top: 10px;
+   font-size: 12px;
+   font-weight: bold; }
+
+label[title] {
+   text-decoration: underline dotted #aaa;
+   text-underline-position: under; }
+
+div.actionButtons {
+   display: flex;
+   align-items: center;
+   margin-top: 20px; }
+
+div.actionButtons button {
+   width: 110px;
+   padding: 4px 0px;
+   margin-right: 20px; }
+
+.w60r {
+   width: 60px;
+   text-align: right; }
+.w100r {
+   width: 100px;
+   text-align: right; }
+.w110 {
+   width: 110px; }
+.w120 {
+   width: 120px; }
+.w120g {
+   width: 120px;
+   margin-left: 20px; }
+.w130 {
+   width: 130px; }
+.w160r {
+   width: 160px;
+   text-align: right; }
+.w200 {
+   width: 200px; }
+.w220 {
+   width: 220px; }
+
+#regionTable {
+   margin-top: 20px; }
+
+.regionTableHeader {
+   display: flex;
+   font-weight: bold;
+   padding-bottom: 3px;
+   padding-left: 22px; }
+.regionTableEntry {
+   position: relative; }
+
+.regionDataBlock {
+   padding-left: 22px;
+   display: flex; }
+
+.openCloseButton {
+   width: 15px;
+   height: 15px;
+   position: absolute;
+   left: 0;
+   top: 3px;
+   border: 1px solid #888;
+   cursor: pointer; }
+
+.plusSymbol {
+   background-repeat: no-repeat;
+   background-image: url("data:image/svg+xml;utf8, \
+     <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'> \
+       <path d='M 25 50 H 75 M 50 25 V 75' stroke='%23111' stroke-width='9px' fill='none'/> \
+     </svg>"); }
+
+.minusSymbol {
+   background-repeat: no-repeat;
+   background-image: url("data:image/svg+xml;utf8, \
+     <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'> \
+       <path d='M 25 50 H 75' stroke='%23111' stroke-width='9px' fill='none'/> \
+     </svg>"); }
+
+.regionChartParms {
+   margin-top: 5px;
+   display: flex; }
+.regionChartParms select {
+   margin-left: 10px; }
+.regionChartParms select:first-child {
+   margin-left: 0; }
+
+div.regionChartContainer {
+   border: 1px solid #aaa;
+   padding-top: 8px;
+   padding-left: 5px;
+   margin-top: 5px;
+   margin-bottom: 10px;
+   width: 662px;
+   height: 315px; }
+canvas.regionChart {
+   /* width and height is specified in the source code */
+   display: block;
+   outline: none;
+   touch-action: none; }

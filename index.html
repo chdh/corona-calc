@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+ <link href="https://fonts.googleapis.com/css?family=Lato" rel="stylesheet">
+ <link rel="stylesheet" href="app.css">
+ <script src="app.js"></script>
+ <title>CoronaCalc - Coronavirus Pandemic Calculations</title>
+</head>
+<body>
+
+<script>
+ try {
+    eval("(async function() {})"); }
+  catch (e) {
+    document.write('<p style="color: red; font-size: 20px; font-weight: bold;">Sorry, your web browser is outdated and cannot run this application!</p>'); }
+</script>
+
+<h1>CoronaCalc - Coronavirus Pandemic Calculations</h1>
+
+<div class="parmBlock" id="inputParms">
+ <div class="parmHeading2">Filter / sort</div>
+ <div class="parmLine">
+  <label class="w120" for="minPopulation" title="Minumum population per region.">Min. population:</label>
+  <input class="w110" id="minPopulation" type="number" min="0" value="1000000">
+  <label class="w120g" for="minDeaths" title="Minimum number of reported deaths per region.">Min. deaths:</label>
+  <input class="w110" id="minDeaths" type="number" min="0" value="1000">
+  <label class="w120g" for="countriesOnly" title="Only show countries.">Countries only:</label>
+  <input id="countriesOnly" type="checkbox">
+ </div>
+ <div class="parmLine">
+  <label class="w120" for="sortOrder">Sort order:</label>
+  <select class="w200" id="sortOrder">
+   <option value="deathsRelDesc">Relative deaths, descending</option>
+   <option value="deathsAbsDesc">Absolute deaths, descending</option>
+   <option value="casesRelDesc">Relative cases, descending</option>
+   <option value="casesAbsDesc">Absolute cases, descending</option>
+   <option value="populationDesc">Population, descending</option>
+   <option value="name">Name</option>
+  </select>
+ </div>
+<div>
+
+<div class="actionButtons">
+ <button id="applyButton">Apply</button>
+</div>
+
+<div id="regionTable">(loading)</div>
+
+<div class="footer">
+ <div>Data source: <a href="https://github.com/CSSEGISandData/COVID-19">Johns Hopkins data repository</a>,
+  Data as of: <span id="dataAsOf">...</span></div>
+ <div>Source code: <a href="https://github.com/chdh/corona-calc">Github</a></div>
+</div>
+
+</body>
+</html>
