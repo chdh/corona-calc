@@ -2,19 +2,19 @@
    box-sizing: inherit; }
 
 html {
-   font-size: 14px;
+   font-size: 15px;
    box-sizing: border-box; }
 
 body, button, input, select, textarea {
-   font-family: Lato, sans-serif;
+   font-family: 'Source Sans Pro', sans-serif;
    font-size: inherit;
-   line-height: 1.4375; }
+   line-height: 1.333; }
 
 body {
    margin: 20px; }
 
 H1 {
-   font-size: 22px; }
+   font-size: 24px; }
 
 a {
    color: #07C;
@@ -26,11 +26,11 @@ a:hover {
    color: #07C;
    cursor: pointer; }
 .miniPseudoButton {
-   font-size: 12px; }
+   font-size: 13px; }
 
 div.footer {
    margin-top: 8px;
-   font-size: 12px; }
+   font-size: 13px; }
 
 code,
 .code {
@@ -67,7 +67,7 @@ div.parmLine input[type="checkbox"] {
 
 div.parmHeading2 {
    margin-top: 10px;
-   font-size: 12px;
+   font-size: 13px;
    font-weight: bold; }
 
 label[title] {

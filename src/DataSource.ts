@@ -36,8 +36,14 @@ export var lastDay:          Moment;                       // last day in time s
 var regionDataTableIndex1:   Map<string,RegionDataRecord>; // maps countryOrRegion+provinceOrState to regionDataTable entries
 var regionDataTableIndex2:   Map<number,RegionDataRecord>; // maps uid to regionDataTable entries
 
+function cachedUrl (s: string) : string {
+   if (window.location.protocol == "file:") {
+      return s; }
+   const fileName = s.substring(s.lastIndexOf("/") + 1);
+   return "dataCache/" + fileName; }
+
 async function loadRegionDataTable() {
-   const text = await fetchTextFile(regionTableUrl);
+   const text = await fetchTextFile(cachedUrl(regionTableUrl));
    const scanner = new Scanner(text, ",");
    scanner.skipEol();                                      // skip header line
    regionDataTable = [];
@@ -73,7 +79,7 @@ async function loadRegionDataTable() {
       return r; }}
 
 function decodeTimeSeriesDate (s: string) : Moment {
-   const d = moment.utc(s, "M/D/YY", true);
+   const d = moment.utc(s, ["M/D/YY", "M/D/YYYY"], true);
    if (!d.isValid()) {
       throw new Error(`Parse error for date value "${s}".`); }
    return d; }
@@ -143,10 +149,10 @@ function processTimeSeriesData (text: string, kind1: number, kind2: number) {
          case 1: r.deaths = a; break; }}}
 
 async function loadTimeSeries() {
-   const globalCasesText  = await fetchTextFile(globalCasesTimeSeriesUrl);
-   const globalDeathsText = await fetchTextFile(globalDeathsTimeSeriesUrl);
-   const usCasesText      = await fetchTextFile(usCasesTimeSeriesUrl);
-   const usDeathsText     = await fetchTextFile(usDeathsTimeSeriesUrl);
+   const globalCasesText  = await fetchTextFile(cachedUrl(globalCasesTimeSeriesUrl));
+   const globalDeathsText = await fetchTextFile(cachedUrl(globalDeathsTimeSeriesUrl));
+   const usCasesText      = await fetchTextFile(cachedUrl(usCasesTimeSeriesUrl));
+   const usDeathsText     = await fetchTextFile(cachedUrl(usDeathsTimeSeriesUrl));
    processTimeSeriesHeader(globalCasesText,   4);
    processTimeSeriesHeader(globalDeathsText,  4);
    processTimeSeriesHeader(usCasesText,      11);

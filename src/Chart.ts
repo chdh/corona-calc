@@ -77,8 +77,8 @@ function createChartConfig (regionNdx: number, chartParms: ChartParms) : ChartJs
    const fontColor = "#000";
    const dateFormat = "YYYY-MM-DD";
    const yDataSet: /* ChartJs.ChartDataSets */ any = {
-      borderColor:     "#ff8080",
-      backgroundColor: "#ffe0e0",
+      borderColor:     (chartParms.source == "deaths") ? "#FF6B5F" : "#0066FF",
+      backgroundColor: (chartParms.source == "deaths") ? "#FDDED6" : "#D8E7FE",
       lineTension: 0,
       borderJoinStyle: "round",
       parsing: false,
