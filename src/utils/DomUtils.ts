@@ -1,5 +1,7 @@
 // Browser DOM utilities.
 
+import {formatNumber, decodeNumber} from "./MiscUtils";
+
 export function getInputElement (elementId: string) : HTMLInputElement {
    const e = <HTMLInputElement>document.getElementById(elementId);
    if (!e) {
@@ -12,11 +14,14 @@ function getInputElementLabelText (e: HTMLInputElement) : string {
       s = s.substring(0, s.length - 1); }
    return s; }
 
+function genValidityErrorMsg (e: HTMLInputElement) {
+   const labelText = getInputElementLabelText(e);
+   const info = labelText ? ` with label "${labelText}"` : e.id ? ` with ID "${e.id}"` : "";
+   return "Invalid value in input field" + info + "."; }
+
 function checkValidity (e: HTMLInputElement) {
    if (!e.checkValidity()) {
-      const labelText = getInputElementLabelText(e);
-      const info = labelText ? ` with label "${labelText}"` : e.id ? ` with ID "${e.id}"` : "";
-      throw new Error("Invalid value in input field" + info + "."); }}
+      throw new Error(genValidityErrorMsg(e)); }}
 
 export function getValue (elementId: string) : string {
    const e = getInputElement(elementId);
@@ -28,7 +33,33 @@ export function getValueNumOpt (elementId: string) : number | undefined {
    checkValidity(e);
    if (e.value == "") {
       return; }
-   return e.valueAsNumber; }
+   if (e.type == "number") {
+      return e.valueAsNumber; }
+   const v = decodeNumber(e.value);
+   if (v == undefined) {
+      throw new Error(genValidityErrorMsg(e)); }
+   return v; }
+
+export function setValueNum (elementId: string, n: number | undefined) {
+   const e = getInputElement(elementId);
+   if (n == undefined || isNaN(n)) {
+      e.value = "";
+      return; }
+   if (e.type == "number") {
+      e.valueAsNumber = n;
+      return; }
+   e.value = formatNumber(n); }
+
+export function addNumericFieldFormatSwitcher (elementId: string) {
+   const e = getInputElement(elementId);
+   e.addEventListener("focusin", () => {
+      const n = decodeNumber(e.value);
+      if (n != undefined) {
+         e.value = String(n); }});
+   e.addEventListener("focusout", () => {
+      const n = decodeNumber(e.value);
+      if (n != undefined) {
+         e.value = formatNumber(n); }}); }
 
 export function getChecked (elementId: string) : boolean {
    return getInputElement(elementId).checked; }

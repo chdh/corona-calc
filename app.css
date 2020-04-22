@@ -14,7 +14,10 @@ body {
    margin: 20px; }
 
 H1 {
-   font-size: 24px; }
+   font-size: 24px;
+   font-weight: 600;
+   margin-top 0;
+   margin-bottom: 15px; }
 
 a {
    color: #07C;
@@ -70,7 +73,8 @@ div.parmHeading2 {
    font-size: 13px;
    font-weight: bold; }
 
-label[title] {
+label[title],
+div[title] {
    text-decoration: underline dotted #aaa;
    text-underline-position: under; }
 
@@ -87,6 +91,9 @@ div.actionButtons button {
 .w60r {
    width: 60px;
    text-align: right; }
+.w80r {
+   width: 80px;
+   text-align: right; }
 .w100r {
    width: 100px;
    text-align: right; }
@@ -99,6 +106,9 @@ div.actionButtons button {
    margin-left: 20px; }
 .w130 {
    width: 130px; }
+.w140r {
+   width: 140px;
+   text-align: right; }
 .w160r {
    width: 160px;
    text-align: right; }
@@ -108,7 +118,7 @@ div.actionButtons button {
    width: 220px; }
 
 #regionTable {
-   margin-top: 20px; }
+   margin-top: 15px; }
 
 .regionTableHeader {
    display: flex;
@@ -123,8 +133,8 @@ div.actionButtons button {
    display: flex; }
 
 .openCloseButton {
-   width: 15px;
-   height: 15px;
+   width: 14px;
+   height: 14px;
    position: absolute;
    left: 0;
    top: 3px;

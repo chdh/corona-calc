@@ -38,7 +38,14 @@ export function escapeHtml (s: string) : string {
 export function formatNumber (n: number | undefined) : string {
    if (n === undefined || !isFinite(n)) {
       return ""; }
-   return numberFormat.format(n).replace(/,/g, "\u202F"); }
+   return numberFormat.format(n).replace(/,/g, "\u2009"); }
+
+// Returns undefined if the string does not contain a valid number.
+export function decodeNumber (s: string) : number | undefined {
+   if (!s) {
+      return undefined; }
+   const n = Number(s.replace(/\u2009/g, ""));
+   return isFinite(n) ? n : undefined; }
 
 export function formatPercent (n: number | undefined, fractionDigits: number) : string {
    if (n === undefined || !isFinite(n)) {

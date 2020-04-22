@@ -9,7 +9,6 @@ import {SelectionParms} from "./Selection";
 import * as Chart from "./Chart";
 import {ChartParms} from "./Chart";
 import * as DomUtils from "./utils/DomUtils";
-import * as MiscUtils from "./utils/MiscUtils";
 import {escapeHtml, formatNumber, formatPercent, formatDateIso, catchError} from "./utils/MiscUtils";
 
 const regionChartCanvasWidth  = 650;
@@ -99,8 +98,8 @@ export function renderRegionTable (selection: number[]) {
       <div class="regionTableHeader">
        <div class="w220">Region (country / state)</div>
        <div class="w100r">Population</div>
-       <div class="w160r">Reported deaths</div>
-       <div class="w160r">Reported cases</div>
+       <div class="w140r">Reported deaths</div>
+       <div class="w140r">Reported cases</div>
       </div>`;
    for (let selPos = 0; selPos < selection.length; selPos++) {
       const regionNdx = selection[selPos];
@@ -112,12 +111,14 @@ export function renderRegionTable (selection: number[]) {
           <div class="regionDataBlock">
            <div class="w220">${escapeHtml(dr.combinedName)}</div>
            <div class="w100r">${formatNumber(dr.population)}</div>
-           <div class="w100r">${formatNumber(cr.latestDeaths)}</div>
+           <div class="w80r">${formatNumber(cr.latestDeaths)}</div>
            <div class="w60r">${formatPercent((cr.latestDeaths ?? NaN) / (dr.population ?? NaN), 3)}</div>
-           <div class="w100r">${formatNumber(cr.latestCases)}</div>
+           <div class="w80r">${formatNumber(cr.latestCases)}</div>
            <div class="w60r">${formatPercent((cr.latestCases ?? NaN) / (dr.population ?? NaN), 3)}</div>
           </div>
          </div>`; }
+//     <div class="w100r" title="Proportion of the number of reported deaths to the number of reported cases.\nThe large fluctuations are an indication of the unreliability of the reported numbers.">Deaths/cases</div>
+//         <div class="w100r">${formatPercent((cr.latestDeaths ?? NaN) / (cr.latestCases ?? NaN), 3)}</div>
    document.getElementById("regionTable")!.innerHTML = html;
    for (const e of document.querySelectorAll(".openCloseButton")) {
       const buttonElement = <HTMLElement>e;
@@ -137,13 +138,20 @@ function genRegionTable() {
    const selection = Selection.createSelection(selParms);
    renderRegionTable(selection); }
 
+/*
 function inputParms_keyDown (event: KeyboardEvent) {
    const keyName = MiscUtils.genKeyName(event);
    if (keyName == "Enter") {
       genRegionTable(); }}
+*/
 
 export function init() {
+   DomUtils.setValueNum("minPopulation", 1000000);
+   DomUtils.setValueNum("minDeaths", 1000);
+   DomUtils.addNumericFieldFormatSwitcher("minPopulation");
+   DomUtils.addNumericFieldFormatSwitcher("minDeaths");
    genRegionTable();
    document.getElementById("dataAsOf")!.textContent = formatDateIso(DataSource.lastDay);
-   document.getElementById("applyButton")!.addEventListener("click", () => catchError(genRegionTable));
-   document.getElementById("inputParms")!.addEventListener("keydown", (event: KeyboardEvent) => catchError(inputParms_keyDown, event)); }
+// document.getElementById("applyButton")!.addEventListener("click", () => catchError(genRegionTable));
+// document.getElementById("inputParms")!.addEventListener("keydown", (event: KeyboardEvent) => catchError(inputParms_keyDown, event));
+   document.getElementById("inputParms")!.addEventListener("change", () => catchError(genRegionTable)); }
