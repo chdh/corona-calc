@@ -49,9 +49,10 @@ function openChart (regionTableEntryElement: HTMLElement, regionNdx: number) {
          <option value="abs">Absolute</option>
         </select>
         <select class="regionChartMode">
-         <option value="cumulative">Cumulative</option>
+         <option value="daily7">7-day average</option>
          <option value="daily">Daily</option>
-         <option value="dailyCum">Daily / cumulative</option>
+         <option value="cumulative">Cumulative</option>
+         <option value="daily7Cum">Daily / cumulative</option>
         </select>
         <select class="regionChartSource">
          <option value="deaths">Deaths</option>
