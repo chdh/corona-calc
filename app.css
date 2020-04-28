@@ -122,9 +122,12 @@ div.actionButtons button {
 
 .regionTableHeader {
    display: flex;
+   align-items: flex-end;
    font-weight: bold;
    padding-bottom: 3px;
    padding-left: 22px; }
+.columnHeaderLine {
+   display: flex; }
 .regionTableEntry {
    position: relative; }
 
@@ -154,6 +157,31 @@ div.actionButtons button {
      <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'> \
        <path d='M 25 50 H 75' stroke='%23111' stroke-width='9px' fill='none'/> \
      </svg>"); }
+
+.orderAscSymbol {
+   background-repeat: no-repeat;
+   background-image: url("data:image/svg+xml;utf8, \
+     <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 443'> \
+       <path fill='%23449844' \
+          d='M 256 0 L 512 443 L 0 443 z'/> \
+     </svg>"); }
+
+.orderDescSymbol {
+   background-repeat: no-repeat;
+   background-image: url("data:image/svg+xml;utf8, \
+     <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 443'> \
+       <path fill='%23449844' \
+          d='M 256 443 L 0 0 L 512 0 z'/> \
+     </svg>"); }
+
+.orderIndicator {
+   height: 9px;
+   width: 10px;
+   display: inline-block;
+   margin-left: 5px; }
+
+.orderClick {
+   cursor: pointer; }
 
 .regionChartParms {
    margin-top: 5px;

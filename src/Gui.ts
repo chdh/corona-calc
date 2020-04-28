@@ -14,7 +14,8 @@ import {escapeHtml, formatNumber, formatPercent, formatDateIso, catchError} from
 const regionChartCanvasWidth  = 650;
 const regionChartCanvasHeight = 300;
 
-let mruChartParms: ChartParms | undefined;
+let mruChartParms:           ChartParms | undefined;
+let currentSortOrder         = "deathsRelDesc";
 
 function getChartParms (parentElement: HTMLElement) : ChartParms {
    return {
@@ -78,6 +79,12 @@ function closeChart (regionTableEntryElement: HTMLElement, regionNdx: number) {
    regionTableEntryElement.querySelector(".regionChartBlock")!.remove();
    Chart.destroyChart(regionNdx); }
 
+function switchSortOrder (newSortOrder: string) {
+   if (newSortOrder == currentSortOrder) {
+      return; }
+   currentSortOrder = newSortOrder;
+   genRegionTable(); }
+
 function setOpenCloseButtonSymbol (buttonElement: HTMLElement, isOpen: boolean) {
    buttonElement.classList.toggle("plusSymbol", !isOpen);
    buttonElement.classList.toggle("minusSymbol", isOpen); }
@@ -93,14 +100,28 @@ function openCloseButton_click (event: MouseEvent) {
       openChart(regionTableEntryElement, regionNdx); }
    setOpenCloseButtonSymbol(buttonElement, !isOpen); }
 
-export function renderRegionTable (selection: number[]) {
+function renderRegionTable (selection: number[], sortOrder: string) {
    Chart.destroyAllCharts();
+   const orderAscIndicator = `<div class="orderIndicator orderAscSymbol"></div>`;
+   const orderDescIndicator = `<div class="orderIndicator orderDescSymbol"></div>`;
    let html = strip`
       <div class="regionTableHeader">
-       <div class="w220">Region (country / state)</div>
-       <div class="w100r">Population</div>
-       <div class="w140r">Reported deaths</div>
-       <div class="w140r">Reported cases</div>
+       <div class="w220 orderClick" data-sort-order="name">Region (country / state) ${sortOrder == "name" ? orderAscIndicator : ""}</div>
+       <div class="w100r orderClick" data-sort-order="populationDesc">Population ${sortOrder == "populationDesc" ? orderDescIndicator : ""}</div>
+       <div class="w140r">
+        <div class="orderClick" data-sort-order="deathsRelDesc">Reported deaths</div>
+        <div class="columnHeaderLine">
+         <div class="w80r orderClick" data-sort-order="deathsAbsDesc"">abs. ${sortOrder == "deathsAbsDesc" ? orderDescIndicator : ""}</div>
+         <div class="w60r orderClick" data-sort-order="deathsRelDesc">rel. ${sortOrder == "deathsRelDesc" ? orderDescIndicator : ""}</div>
+        </div>
+       </div>
+       <div class="w140r">
+        <div class="orderClick" data-sort-order="casesRelDesc">Reported cases</div>
+        <div class="columnHeaderLine">
+         <div class="w80r orderClick" data-sort-order="casesAbsDesc"">abs. ${sortOrder == "casesAbsDesc" ? orderDescIndicator : ""}</div>
+         <div class="w60r orderClick" data-sort-order="casesRelDesc">rel. ${sortOrder == "casesRelDesc" ? orderDescIndicator : ""}</div>
+        </div>
+       </div>
       </div>`;
    for (let selPos = 0; selPos < selection.length; selPos++) {
       const regionNdx = selection[selPos];
@@ -121,8 +142,9 @@ export function renderRegionTable (selection: number[]) {
 //     <div class="w100r" title="Proportion of the number of reported deaths to the number of reported cases.\nThe large fluctuations are an indication of the unreliability of the reported numbers.">Deaths/cases</div>
 //         <div class="w100r">${formatPercent((cr.latestDeaths ?? NaN) / (cr.latestCases ?? NaN), 3)}</div>
    document.getElementById("regionTable")!.innerHTML = html;
-   for (const e of document.querySelectorAll(".openCloseButton")) {
-      const buttonElement = <HTMLElement>e;
+   for (const e of <NodeListOf<HTMLElement>>document.querySelectorAll(".orderClick")) {
+      e.addEventListener("click", () => catchError(switchSortOrder, e.dataset.sortOrder)); }
+   for (const buttonElement of <NodeListOf<HTMLElement>>document.querySelectorAll(".openCloseButton")) {
       buttonElement.addEventListener("click", (event: MouseEvent) => catchError(openCloseButton_click, event));
       setOpenCloseButtonSymbol(buttonElement, false); }}
 
@@ -131,13 +153,13 @@ function getSelectionParms() : SelectionParms {
    selParms.minPopulation = DomUtils.getValueNumOpt("minPopulation");
    selParms.minDeaths     = DomUtils.getValueNumOpt("minDeaths");
    selParms.countriesOnly = DomUtils.getChecked("countriesOnly");
-   selParms.sortOrder     = DomUtils.getValue("sortOrder");
+   selParms.sortOrder     = currentSortOrder;
    return selParms; }
 
 function genRegionTable() {
    const selParms = getSelectionParms();
    const selection = Selection.createSelection(selParms);
-   renderRegionTable(selection); }
+   renderRegionTable(selection, selParms.sortOrder); }
 
 /*
 function inputParms_keyDown (event: KeyboardEvent) {
