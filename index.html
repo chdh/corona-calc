@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
- <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600;700&display=block">
+ <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600;700&amp;display=block">
  <link rel="stylesheet" href="app.css">
  <script src="app.js"></script>
  <title>CoronaCalc - Coronavirus Pandemic Calculations</title>
@@ -18,6 +18,13 @@
 <h1>CoronaCalc - Coronavirus Pandemic Calculations</h1>
 
 <div class="parmBlock" id="inputParms">
+ <div class="parmHeading2">Calculation parameters</div>
+ <div class="parmLine">
+  <label class="w120" for="caseDeathTimeLag" title="Time lag between reported cases and reported deaths, in days.&#10;Used to calculate the case fatality rate (CFR).">Cases/deaths lag:</label>
+  <input class="w110" id="caseDeathTimeLag" type="number" min="0" required value="8">
+  <label class="w120g" for="growthDays" title="Number of days over which to average&#10;for the calculation of growth.">Growth avg. days:</label>
+  <input class="w110" id="growthDays" type="number" min="1" required value="14">
+ </div>
  <div class="parmHeading2">Filter</div>
  <div class="parmLine">
   <label class="w120" for="minPopulation" title="Minumum population per region.">Min. population:</label>
@@ -27,26 +34,7 @@
   <label class="w120g" for="countriesOnly" title="Only show countries.">Countries only:</label>
   <input id="countriesOnly" type="checkbox" checked>
  </div>
-<!--
- <div class="parmLine">
-  <label class="w120" for="sortOrder">Sort order:</label>
-  <select class="w220" id="sortOrder">
-   <option value="deathsRelDesc">Relative deaths, descending</option>
-   <option value="deathsAbsDesc">Absolute deaths, descending</option>
-   <option value="casesRelDesc">Relative cases, descending</option>
-   <option value="casesAbsDesc">Absolute cases, descending</option>
-   <option value="populationDesc">Population, descending</option>
-   <option value="name">Name</option>
-  </select>
- </div>
--->
 </div>
-
-<!--
-<div class="actionButtons">
- <button id="applyButton">Apply</button>
-</div>
--->
 
 <div id="regionTable">(loading)</div>
 

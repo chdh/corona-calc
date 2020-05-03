@@ -1,14 +1,15 @@
 import {regions, firstDay, lastDay, days, regionDataTable, RegionDataRecord} from "./DataSource";
-import {formatNumber, formatPercent, differentiateFloat64Array} from "./utils/MiscUtils";
+import {formatNumber, formatPercent} from "./utils/MiscUtils";
+import {calcParms, differentiate} from "./Calc";
 import ChartJs_Chart from "chart.js";
 import * as ChartJs from "chart.js";
 import moment from "moment";
 import "./tempExtSource/chartjs-adapter-moment.js";        // imported for side-effects only
 
-export interface ChartParms {
-   absRel:                   string;                       // "abs" = absolute, "rel" = relative values
-   mode:                     string;                       // "daily", "daily7", "cumulative", "dailyCum", "daily7Cum"
+export interface ChartParms {                              // chart parameters
    source:                   string;                       // "deaths", "cases"
+   mode:                     string;                       // "daily", "dailyAvg", "cumulative", "dailyAvgCum", "growth"
+   absRel:                   string;                       // "abs" = absolute, "rel" = relative values
    scale:                    string; }                     // "lin" = linear, "log" = logarithmic
 
 var chartControllers:        (ChartController | undefined)[];
@@ -33,25 +34,37 @@ class ChartController {
 
    private createChartConfig() : ChartJs.ChartConfiguration {
       const chartParms = this.chartParms;
+      const isGrowth = chartParms.mode == "growth";
+      const isXy = chartParms.mode == "dailyAvgCum";
       const fontColor = "#000";
       const dateFormat = "YYYY-MM-DD";
+      const dataPoints = this.genChartDataPoints();
       const yDataSet: /* ChartJs.ChartDataSets */ any = {
          borderColor:     (chartParms.source == "deaths") ? "#FF6B5F" : "#0066FF",
-         backgroundColor: (chartParms.source == "deaths") ? "#FDDED6" : "#D8E7FE",
+         backgroundColor: isGrowth ? "rgba(0,0,0,0.15)" : (chartParms.source == "deaths") ? "#FDDED6" : "#D8E7FE",
          lineTension: 0,
          borderJoinStyle: "round",
          parsing: false,
-         data: this.genChartDataPoints() };
+         data: dataPoints };
       const datasets: ChartJs.ChartDataSets[] = [yDataSet];
-      const valueAxisType = (chartParms.scale == "log") ? "logarithmic" : "linear";
-      const valueAxisMin = (chartParms.scale == "lin") ? 0 : (chartParms.absRel == "abs") ? 1 : 100 / (this.dataRecord.population ?? 1000);
-      const isXy = chartParms.mode == "dailyCum" || chartParms.mode == "daily7Cum";
+      const yAxisType = (chartParms.scale == "log" && !isGrowth) ? "logarithmic" : "linear";
+      const {yMin, yMax} = this.findDataPointsMinMax(dataPoints);
+      const yAbsMax = Math.max(Math.abs(yMin), Math.abs(yMax));
+      const yMaxGrowth = Math.ceil(Math.max(1, yAbsMax));
+      const yAxisMin =
+         isGrowth ? undefined :
+         (chartParms.scale == "lin") ? 0 :
+         (chartParms.absRel == "abs") ? 1 :
+         100 / (this.dataRecord.population ?? 1000);
+      const yAxisMax = undefined;
+      const yAxisSuggestedMin = isGrowth ? -yMaxGrowth : undefined;
+      const yAxisSuggestedMax = isGrowth ? yMaxGrowth : undefined;
       const isXAsisLog = isXy && chartParms.scale == "log";
-      const isYAsisLog = chartParms.scale == "log";
+      const isYAsisLog = chartParms.scale == "log" && !isGrowth;
       const scales: /* ChartJs.ChartScales */ any = {
          x: {
-            type: isXy ? valueAxisType : "time",
-            min: isXy ? valueAxisMin : firstDay.format(dateFormat),
+            type: isXy ? yAxisType : "time",
+            min: isXy ? yAxisMin : firstDay.format(dateFormat),
             max: isXy ? undefined : lastDay.clone().add(1, "d").format(dateFormat),
             time: {
                parser: dateFormat,
@@ -64,8 +77,11 @@ class ChartController {
                fontColor,
                callback: (value: any, index: number, values: any) => this.ticksCallback(value, index, values, false, isXAsisLog) }},
          y: {
-            type: valueAxisType,
-            min: valueAxisMin,
+            type: yAxisType,
+            min: yAxisMin,
+            max: yAxisMax,
+            suggestedMin: yAxisSuggestedMin,
+            suggestedMax: yAxisSuggestedMax,
       //    scaleLabel: {
       //       display: true,
       //       labelString: "...",
@@ -98,8 +114,17 @@ class ChartController {
          data: { datasets },
          options }; }
 
+   private findDataPointsMinMax (dataPoints: ChartJs.ChartPoint[]) {
+      let yMin = Infinity;
+      let yMax = -Infinity;
+      for (const p of dataPoints) {
+         if (typeof p.y == "number" && isFinite(p.y)) {
+            yMin = Math.min(yMin, p.y);
+            yMax = Math.max(yMax, p.y); }}
+      return {yMin, yMax}; }
+
    private genChartDataPoints() : ChartJs.ChartPoint[] {
-      if (this.chartParms.mode == "dailyCum" || this.chartParms.mode == "daily7Cum") {
+      if (this.chartParms.mode == "dailyAvgCum") {
          return this.genXyChartDataPoints(); }
        else {
          return this.genTimeChartDataPoints(); }}
@@ -116,7 +141,7 @@ class ChartController {
       return points; }
 
    private genXyChartDataPoints() : ChartJs.ChartPoint[] {
-      const yAxisMode = (this.chartParms.mode == "daily7Cum") ? "daily7" : "daily";
+      const yAxisMode = (this.chartParms.mode == "dailyAvgCum") ? "dailyAvg" : "daily";
       const xVals = this.prepTimeSeriesValues("cumulative");
       const yVals = this.prepTimeSeriesValues(yAxisMode);
       const points = Array(days);
@@ -128,27 +153,58 @@ class ChartController {
 
    private prepTimeSeriesValues (mode2: string) : Float64Array {
       const chartParms = this.chartParms;
-      let sourceVals: Float64Array;
+      let sourceVals: Float64Array | undefined;
       switch (chartParms.source) {
-         case "deaths": sourceVals = this.dataRecord.deaths!; break;
-         case "cases":  sourceVals = this.dataRecord.cases!;  break;
+         case "deaths": sourceVals = this.dataRecord.deaths; break;
+         case "cases":  sourceVals = this.dataRecord.cases;  break;
          default: throw new Error("Unknown source."); }
+      if (!sourceVals) {
+         throw new Error("Not source data values available."); }
       let vals: Float64Array;
       switch (mode2) {
-         case "daily":  vals = differentiateFloat64Array(sourceVals, 1); break;
-         case "daily7": vals = differentiateFloat64Array(sourceVals, 7); break;
-         default:       vals = sourceVals; }
-      const outVals = new Float64Array(days);
+         case "daily":    vals = differentiate(sourceVals, 1); break;
+         case "dailyAvg": vals = differentiate(sourceVals, calcParms.dailyAvgDays); break;
+         case "growth":   return this.genGrowthValues(sourceVals);
+         default:         vals = sourceVals; }
+      return this.prepRelLogValues(vals); }
+
+   private prepRelLogValues (a1: Float64Array) : Float64Array {
+      const chartParms = this.chartParms;
+      const n = a1.length;
+      const a2 = new Float64Array(n);
       const relative = chartParms.absRel == "rel";
       const log = chartParms.scale == "log";
       for (let i = 0; i < days; i++) {
-         let v = vals[i];
+         let v = a1[i];
          if (log) {
             v = Math.max(v, 1E-3); }
          if (relative) {
             v = v * 100 / (this.dataRecord.population ?? NaN); }
-         outVals[i] = v; }
-      return outVals; }
+         a2[i] = v; }
+      return a2; }
+
+   private genGrowthValues (a1: Float64Array) : Float64Array {
+      const chartParms = this.chartParms;
+      const n = a1.length;
+      const d1 = differentiate(a1, calcParms.dailyAvgDays);  // first derivative
+      const d2 = differentiate(d1, calcParms.growthDays);    // second derivative
+      const a2 = new Float64Array(n);
+      const relative = chartParms.absRel == "rel";
+      a2[0] = NaN;
+      for (let i = 1; i < n; i++) {
+         if (d1[i] < 5) {
+            a2[i] = NaN;
+            continue; }
+         if (relative) {
+            const d1b = d1[i - 1];
+            const r = d2[i] / d1b * 100;
+            if (Math.abs(r) >= 40) {
+               a2[i] = NaN;
+               continue; }
+            a2[i] = r; }
+          else {
+            a2[i] = d2[i]; }}
+      return a2; }
 
    private ticksCallback (_valueFmt: any, index: number, values: any, isYAxis: boolean, isLog: boolean) : any {
       const value = values[index].value;
@@ -165,19 +221,24 @@ class ChartController {
 
    private formatLabel (value: any, isYAxis: boolean, extendedFormat: boolean, unit?: any) : string {
       const chartParms = this.chartParms;
-      const type = (isYAxis || chartParms.mode == "dailyCum" || chartParms.mode == "daily7Cum") ? chartParms.absRel : "time";
+      const isGrowth = chartParms.mode == "growth";
+      const type =
+         (isYAxis || chartParms.mode == "dailyAvgCum") ? chartParms.absRel :
+         "time";
       switch (type) {
          case "abs": {
             let v = <number>value;
             const r = (v < 10) ? 10 : 1;
             v = Math.round(v * r) / r;                     // (rounding is done because averaging leads to non-integer values)
-            return formatNumber(v) + (extendedFormat ? " " + this.genLabelLegend(isYAxis) : ""); }
+            const plusSign = (isGrowth && v > 0) ? "+" : "";
+            return plusSign + formatNumber(v) + (extendedFormat ? " " + this.genLabelLegend(isYAxis) : ""); }
          case "rel": {
             const v = <number>value;
-            const unit2 = unit ?? v / 100;
+            const unit2 = unit ?? Math.abs(v) / 100;
             const d = Math.ceil(-Math.log10(unit2) - 0.001);
             const fractionDigits = (extendedFormat && v == 0) ? 0 : Math.max(0, Math.min(8, d));
-            return formatPercent(v / 100, fractionDigits) + (extendedFormat ? " " + this.genLabelLegend(isYAxis) : ""); }
+            const plusSign = (isGrowth && v > 0) ? "+" : "";
+            return plusSign + formatPercent(v / 100, fractionDigits) + (extendedFormat ? " " + this.genLabelLegend(isYAxis) : ""); }
          case "time": {
             const m = moment.isMoment(value) ? value : moment(value);      // (moment() and not moment.utc() must be used here)
             return m.format(extendedFormat ? "MMM D, YYYY" : "MMM D"); }
@@ -187,13 +248,16 @@ class ChartController {
    private genLabelLegend (isYAxis: boolean) {
       const chartParms = this.chartParms;
       // (not yet used for time values)
-      const cumulative = chartParms.mode == "cumulative" || (chartParms.mode == "dailyCum" || chartParms.mode == "daily7Cum") && !isYAxis;
+      const isGrowth = isYAxis && chartParms.mode == "growth";
+      const avg = chartParms.mode == "dailyAvg" || (chartParms.mode == "dailyAvgCum" && isYAxis) || chartParms.mode == "growth";
+      const avgDays = isGrowth ? calcParms.growthDays : calcParms.dailyAvgDays;
+      const cumulative = chartParms.mode == "cumulative" || chartParms.mode == "dailyAvgCum" && !isYAxis;
       const daily = !cumulative;
-      const avg7 = chartParms.mode == "daily7" || (chartParms.mode == "daily7Cum" && isYAxis);
       return (cumulative ? "cumulative " : "") +
          chartParms.source +
+         (isGrowth ? " growth" : "") +
          (daily ? " per day" : "") +
-         (avg7 ? " (average over the previous 7 days)" : ""); }
+         (avg ? ` (average over the previous ${avgDays} days)` : ""); }
 
    private tooltipTitleCallback (items: ChartJs.ChartTooltipItem[], _data: ChartJs.ChartData) : string | string[] {
       const p = items[0].index!;

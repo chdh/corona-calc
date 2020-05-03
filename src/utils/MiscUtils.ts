@@ -55,27 +55,6 @@ export function formatPercent (n: number | undefined, fractionDigits: number) : 
 export function formatDateIso (d: Moment) : string {
    return d.format("YYYY-MM-DD"); }
 
-export function differentiateFloat64Array (a: Float64Array, w: number) : Float64Array {
-   const n = a.length;
-   const a2 = new Float64Array(n);
-   for (let i = 0; i < n; i++) {
-      if (i < w) {
-         a2[i] = a[i] / (i + 1); }
-       else {
-         a2[i] = (a[i] - a[i - w]) / w; }}
-   return a2; }
-
-export function movingAverageFloat64Array (a: Float64Array, w: number) : Float64Array {
-   const n = a.length;
-   const a2 = new Float64Array(n);
-   let sum = 0;
-   for (let i = 0; i < n; i++) {
-      if (i >= w) {
-         sum -= a[i - w]; }
-      sum += a[i];
-      a2[i] = sum / w; }
-   return a2; }
-
 export async function catchError (f: Function, ...args: any[]) {
    try {
       const r = f(...args);

@@ -9,6 +9,7 @@ export interface SelectionParms {
    countriesOnly:            boolean;
    sortOrder:                string; }
 
+// Creates a selection of regions.
 export function createSelection (selParms: SelectionParms) : number[] {
    const sel: number[] = [];
    for (let regionNdx = 0; regionNdx < regionDataTable.length; regionNdx++) {
@@ -31,6 +32,12 @@ export function createSelection (selParms: SelectionParms) : number[] {
       const cr2 = regionCalcTable[regionNdx2];
       const nameSort = dr1.combinedName.localeCompare(dr2.combinedName);
       switch (selParms.sortOrder) {
+         case "populationDesc": {
+            return (dr2.population ?? -1) - (dr1.population ?? -1) || nameSort; }
+         case "casesAbsDesc": {
+            return (cr2.latestCases ?? -1) - (cr1.latestCases ?? -1) || nameSort; }
+         case "deathsAbsDesc": {
+            return (cr2.latestDeaths ?? -1) - (cr1.latestDeaths ?? -1) || nameSort; }
          case "casesRelDesc": {
             const relCases1 = (cr1.latestCases ?? -1) / (dr1.population ?? Infinity);
             const relCases2 = (cr2.latestCases ?? -1) / (dr2.population ?? Infinity);
@@ -39,12 +46,8 @@ export function createSelection (selParms: SelectionParms) : number[] {
             const relDeaths1 = (cr1.latestDeaths ?? -1) / (dr1.population ?? Infinity);
             const relDeaths2 = (cr2.latestDeaths ?? -1) / (dr2.population ?? Infinity);
             return relDeaths2 - relDeaths1 || nameSort; }
-         case "casesAbsDesc": {
-            return (cr2.latestCases ?? -1) - (cr1.latestCases ?? -1) || nameSort; }
-         case "deathsAbsDesc": {
-            return (cr2.latestDeaths ?? -1) - (cr1.latestDeaths ?? -1) || nameSort; }
-         case "populationDesc": {
-            return (dr2.population ?? -1) - (dr1.population ?? -1) || nameSort; }
+         case "cfrDesc": {
+            return (cr2.cfr ?? -1) - (cr1.cfr ?? -1) || nameSort; }
          case "name": {
             return nameSort; }
          default: {

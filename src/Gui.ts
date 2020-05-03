@@ -3,7 +3,8 @@
 import {stripIndents as strip} from "common-tags";
 import * as DataSource from "./DataSource";
 import {regionDataTable} from "./DataSource";
-import {regionCalcTable} from "./Calc";
+import * as Calc from "./Calc";
+import {CalcParms, regionCalcTable} from "./Calc";
 import * as Selection from "./Selection";
 import {SelectionParms} from "./Selection";
 import * as Chart from "./Chart";
@@ -19,45 +20,53 @@ let currentSortOrder         = "deathsRelDesc";
 
 function getChartParms (parentElement: HTMLElement) : ChartParms {
    return {
-      absRel: get(".regionChartAbsRel"),
-      mode:   get(".regionChartMode"),
       source: get(".regionChartSource"),
+      mode:   get(".regionChartMode"),
+      absRel: get(".regionChartAbsRel"),
       scale:  get(".regionChartScale") };
    function get (sel: string) {
       return (<HTMLSelectElement>parentElement.querySelector(sel))!.value; }}
 
 function setChartParms (parentElement: HTMLElement, parms: ChartParms) {
-   set(".regionChartAbsRel", parms.absRel);
-   set(".regionChartMode",   parms.mode);
    set(".regionChartSource", parms.source);
+   set(".regionChartMode",   parms.mode);
+   set(".regionChartAbsRel", parms.absRel);
    set(".regionChartScale",  parms.scale);
+   const e1 = parms.mode != "growth";
+   show(".regionChartScale", e1);
    function set (sel: string, value: string) {
-      (<HTMLSelectElement>parentElement.querySelector(sel))!.value = value; }}
+      (<HTMLSelectElement>parentElement.querySelector(sel))!.value = value; }
+   function show (sel: string, visible: boolean) {
+      parentElement.querySelector(sel)!.classList.toggle("hidden", !visible); }}
 
-function createChart (parentElement: HTMLElement, regionNdx: number, rememberParms = false) {
-   const canvas = <HTMLCanvasElement>parentElement.querySelector(".regionChart")!;
-   const parms = getChartParms(parentElement);
-   if (rememberParms) {
-      mruChartParms = parms; }
-   Chart.createChart(canvas, regionNdx, parms); }
+function createChart (regionTableEntryElement: HTMLElement, regionNdx: number, chartParms: ChartParms) {
+   setChartParms(regionTableEntryElement, chartParms);
+   const canvas = <HTMLCanvasElement>regionTableEntryElement.querySelector(".regionChart")!;
+   Chart.createChart(canvas, regionNdx, chartParms); }
+
+function updateChart (regionTableEntryElement: HTMLElement, regionNdx: number) {
+   const chartParms = getChartParms(regionTableEntryElement);
+   createChart(regionTableEntryElement, regionNdx, chartParms);
+   mruChartParms = chartParms; }
 
 function openChart (regionTableEntryElement: HTMLElement, regionNdx: number) {
    const html = strip`
       <div class="regionChartBlock">
        <div class="regionChartParms">
-        <select class="regionChartAbsRel">
-         <option value="rel">Relative</option>
-         <option value="abs">Absolute</option>
-        </select>
-        <select class="regionChartMode">
-         <option value="daily7">7-day average</option>
-         <option value="daily">Daily</option>
-         <option value="cumulative">Cumulative</option>
-         <option value="daily7Cum">Daily / cumulative</option>
-        </select>
         <select class="regionChartSource">
          <option value="deaths">Deaths</option>
          <option value="cases">Cases</option>
+        </select>
+        <select class="regionChartMode">
+         <option value="dailyAvg">${Calc.calcParms.dailyAvgDays}-day average</option>
+         <option value="daily">Daily</option>
+         <option value="cumulative">Cumulative</option>
+         <option value="dailyAvgCum">Daily / cumulative</option>
+         <option value="growth">Growth (${Calc.calcParms.growthDays}-day avg.)</option>
+        </select>
+        <select class="regionChartAbsRel">
+         <option value="rel">Relative</option>
+         <option value="abs">Absolute</option>
         </select>
         <select class="regionChartScale">
          <option value="lin">Linear</option>
@@ -70,10 +79,9 @@ function openChart (regionTableEntryElement: HTMLElement, regionNdx: number) {
       </div>`;
    regionTableEntryElement.insertAdjacentHTML("beforeend", html);
    const parmsElement = regionTableEntryElement.querySelector(".regionChartParms")!;
-   parmsElement.addEventListener("input", () => catchError(createChart, regionTableEntryElement, regionNdx, true));
-   if (mruChartParms) {
-      setChartParms(regionTableEntryElement, mruChartParms); }
-   createChart(regionTableEntryElement, regionNdx); }
+   parmsElement.addEventListener("input", () => catchError(updateChart, regionTableEntryElement, regionNdx));
+   const chartParms = mruChartParms ? mruChartParms : getChartParms(regionTableEntryElement);
+   createChart(regionTableEntryElement, regionNdx, chartParms); }
 
 function closeChart (regionTableEntryElement: HTMLElement, regionNdx: number) {
    regionTableEntryElement.querySelector(".regionChartBlock")!.remove();
@@ -106,22 +114,23 @@ function renderRegionTable (selection: number[], sortOrder: string) {
    const orderDescIndicator = `<div class="orderIndicator orderDescSymbol"></div>`;
    let html = strip`
       <div class="regionTableHeader">
-       <div class="w220 orderClick" data-sort-order="name">Region (country / state) ${sortOrder == "name" ? orderAscIndicator : ""}</div>
+       <div class="w200 orderClick" data-sort-order="name">Region (country / state) ${sortOrder == "name" ? orderAscIndicator : ""}</div>
        <div class="w100r orderClick" data-sort-order="populationDesc">Population ${sortOrder == "populationDesc" ? orderDescIndicator : ""}</div>
        <div class="w140r">
         <div class="orderClick" data-sort-order="deathsRelDesc">Reported deaths</div>
         <div class="columnHeaderLine">
-         <div class="w80r orderClick" data-sort-order="deathsAbsDesc"">abs. ${sortOrder == "deathsAbsDesc" ? orderDescIndicator : ""}</div>
+         <div class="w80r orderClick" data-sort-order="deathsAbsDesc">abs. ${sortOrder == "deathsAbsDesc" ? orderDescIndicator : ""}</div>
          <div class="w60r orderClick" data-sort-order="deathsRelDesc">rel. ${sortOrder == "deathsRelDesc" ? orderDescIndicator : ""}</div>
         </div>
        </div>
        <div class="w140r">
         <div class="orderClick" data-sort-order="casesRelDesc">Reported cases</div>
         <div class="columnHeaderLine">
-         <div class="w80r orderClick" data-sort-order="casesAbsDesc"">abs. ${sortOrder == "casesAbsDesc" ? orderDescIndicator : ""}</div>
+         <div class="w80r orderClick" data-sort-order="casesAbsDesc">abs. ${sortOrder == "casesAbsDesc" ? orderDescIndicator : ""}</div>
          <div class="w60r orderClick" data-sort-order="casesRelDesc">rel. ${sortOrder == "casesRelDesc" ? orderDescIndicator : ""}</div>
         </div>
        </div>
+       <div class="w80r orderClick" data-sort-order="cfrDesc" title="Overall case fatality rate, taking into account the time\nlag between reported cases and reported deaths">CFR ${sortOrder == "cfrDesc" ? orderDescIndicator : ""}</div>
       </div>`;
    for (let selPos = 0; selPos < selection.length; selPos++) {
       const regionNdx = selection[selPos];
@@ -131,16 +140,15 @@ function renderRegionTable (selection: number[], sortOrder: string) {
          <div class="regionTableEntry" data-region-ndx="${regionNdx}">
           <div class="openCloseButton"></div>
           <div class="regionDataBlock">
-           <div class="w220">${escapeHtml(dr.combinedName)}</div>
+           <div class="w200">${escapeHtml(dr.combinedName)}</div>
            <div class="w100r">${formatNumber(dr.population)}</div>
            <div class="w80r">${formatNumber(cr.latestDeaths)}</div>
            <div class="w60r">${formatPercent((cr.latestDeaths ?? NaN) / (dr.population ?? NaN), 3)}</div>
            <div class="w80r">${formatNumber(cr.latestCases)}</div>
            <div class="w60r">${formatPercent((cr.latestCases ?? NaN) / (dr.population ?? NaN), 3)}</div>
+           <div class="w80r">${formatPercent(cr.cfr ?? NaN, 1)}</div>
           </div>
          </div>`; }
-//     <div class="w100r" title="Proportion of the number of reported deaths to the number of reported cases.\nThe large fluctuations are an indication of the unreliability of the reported numbers.">Deaths/cases</div>
-//         <div class="w100r">${formatPercent((cr.latestDeaths ?? NaN) / (cr.latestCases ?? NaN), 3)}</div>
    document.getElementById("regionTable")!.innerHTML = html;
    for (const e of <NodeListOf<HTMLElement>>document.querySelectorAll(".orderClick")) {
       e.addEventListener("click", () => catchError(switchSortOrder, e.dataset.sortOrder)); }
@@ -156,8 +164,17 @@ function getSelectionParms() : SelectionParms {
    selParms.sortOrder     = currentSortOrder;
    return selParms; }
 
+function getCalcParms() : CalcParms {
+   const calcParms = <CalcParms>{};
+   calcParms.caseDeathTimeLag = DomUtils.getValueNumReq("caseDeathTimeLag");
+   calcParms.growthDays       = DomUtils.getValueNumReq("growthDays");
+   calcParms.dailyAvgDays     = 7;
+   return calcParms; }
+
 function genRegionTable() {
+   const calcParms = getCalcParms();
    const selParms = getSelectionParms();
+   Calc.build(calcParms);
    const selection = Selection.createSelection(selParms);
    renderRegionTable(selection, selParms.sortOrder); }
 

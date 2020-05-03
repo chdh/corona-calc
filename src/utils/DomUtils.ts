@@ -14,9 +14,10 @@ function getInputElementLabelText (e: HTMLInputElement) : string {
       s = s.substring(0, s.length - 1); }
    return s; }
 
-function genValidityErrorMsg (e: HTMLInputElement) {
-   const labelText = getInputElementLabelText(e);
-   const info = labelText ? ` with label "${labelText}"` : e.id ? ` with ID "${e.id}"` : "";
+function genValidityErrorMsg (e: HTMLInputElement | string) {
+   const e2 = (typeof e == "string") ? getInputElement(e) : e;
+   const labelText = getInputElementLabelText(e2);
+   const info = labelText ? ` with label "${labelText}"` : e2.id ? ` with ID "${e2.id}"` : "";
    return "Invalid value in input field" + info + "."; }
 
 function checkValidity (e: HTMLInputElement) {
@@ -38,6 +39,12 @@ export function getValueNumOpt (elementId: string) : number | undefined {
    const v = decodeNumber(e.value);
    if (v == undefined) {
       throw new Error(genValidityErrorMsg(e)); }
+   return v; }
+
+export function getValueNumReq (elementId: string) : number {
+   const v = getValueNumOpt(elementId);
+   if (v == undefined) {
+      throw new Error(genValidityErrorMsg(elementId)); }
    return v; }
 
 export function setValueNum (elementId: string, n: number | undefined) {
