@@ -17,7 +17,7 @@ export function createSelection (selParms: SelectionParms) : number[] {
       const cr = regionCalcTable[regionNdx];
       if (selParms.minPopulation && selParms.minPopulation > (dr.population ?? -1)) {
          continue; }
-      if (selParms.minDeaths && selParms.minDeaths > (cr.latestDeaths ?? -1)) {
+      if (selParms.minDeaths && selParms.minDeaths > (cr.deaths ?? -1)) {
          continue; }
       if (selParms.countriesOnly && !dr.isCountry) {
          continue; }
@@ -35,20 +35,35 @@ export function createSelection (selParms: SelectionParms) : number[] {
          case "populationDesc": {
             return (dr2.population ?? -1) - (dr1.population ?? -1) || nameSort; }
          case "casesAbsDesc": {
-            return (cr2.latestCases ?? -1) - (cr1.latestCases ?? -1) || nameSort; }
+            return (cr2.cases ?? -1) - (cr1.cases ?? -1) || nameSort; }
          case "deathsAbsDesc": {
-            return (cr2.latestDeaths ?? -1) - (cr1.latestDeaths ?? -1) || nameSort; }
+            return (cr2.deaths ?? -1) - (cr1.deaths ?? -1) || nameSort; }
          case "casesRelDesc": {
-            const relCases1 = (cr1.latestCases ?? -1) / (dr1.population ?? Infinity);
-            const relCases2 = (cr2.latestCases ?? -1) / (dr2.population ?? Infinity);
-            return relCases2 - relCases1 || nameSort; }
+            const r1 = (cr1.cases ?? -1) / (dr1.population ?? Infinity);
+            const r2 = (cr2.cases ?? -1) / (dr2.population ?? Infinity);
+            return r2 - r1 || nameSort; }
          case "deathsRelDesc": {
-            const relDeaths1 = (cr1.latestDeaths ?? -1) / (dr1.population ?? Infinity);
-            const relDeaths2 = (cr2.latestDeaths ?? -1) / (dr2.population ?? Infinity);
-            return relDeaths2 - relDeaths1 || nameSort; }
+            const r1 = (cr1.deaths ?? -1) / (dr1.population ?? Infinity);
+            const r2 = (cr2.deaths ?? -1) / (dr2.population ?? Infinity);
+            return r2 - r1 || nameSort; }
+         case "casesDailyDesc": {
+            const r1 = vn(cr1.casesDaily, -1) / (dr1.population ?? Infinity);
+            const r2 = vn(cr2.casesDaily, -1) / (dr2.population ?? Infinity);
+            return r2 - r1 || nameSort; }
+         case "deathsDailyDesc": {
+            const r1 = vn(cr1.deathsDaily, -1) / (dr1.population ?? Infinity);
+            const r2 = vn(cr2.deathsDaily, -1) / (dr2.population ?? Infinity);
+            return r2 - r1 || nameSort; }
+         case "casesTrendDesc": {
+            return vn(cr2.casesTrend, -999) - vn(cr1.casesTrend, -999) || nameSort; }
+         case "deathsTrendDesc": {
+            return vn(cr2.deathsTrend, -999) - vn(cr1.deathsTrend, -999) || nameSort; }
          case "cfrDesc": {
             return (cr2.cfr ?? -1) - (cr1.cfr ?? -1) || nameSort; }
          case "name": {
             return nameSort; }
          default: {
             throw new Error("Undefined sortOrder."); }}}}
+
+function vn (n: number | undefined, fallbackValue: number) : number {
+   return (n != undefined && isFinite(n)) ? n : fallbackValue; }

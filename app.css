@@ -88,6 +88,9 @@ div.actionButtons button {
    padding: 4px 0px;
    margin-right: 20px; }
 
+.w50r {
+   width: 50px;
+   text-align: right; }
 .w60r {
    width: 60px;
    text-align: right; }
@@ -114,8 +117,9 @@ div.actionButtons button {
    text-align: right; }
 .w200 {
    width: 200px; }
-.w220 {
-   width: 220px; }
+.w250r {
+   width: 250px;
+   text-align: right; }
 
 #regionTable {
    margin-top: 15px; }
@@ -125,11 +129,24 @@ div.actionButtons button {
    align-items: flex-end;
    font-weight: bold;
    padding-bottom: 3px;
-   padding-left: 22px; }
+   padding-left: 22px;
+   font-size: 14px; }
 .columnHeaderLine {
    display: flex; }
+.columnHeader2 {
+   text-align: center;
+   background-color: #f4f4f4;
+   padding: 3px 0;
+   margin-left: 10px; }
 .regionTableEntry {
    position: relative; }
+
+.levelHi {
+   background-color: #ffe0e0; }
+.levelMed {
+   background-color: #ffffe0; }
+.levelLo {
+   background-color: #e0ffe0; }
 
 .regionDataBlock {
    padding-left: 22px;

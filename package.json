@@ -3,7 +3,7 @@
    "dependencies": {
       "chart.js": "^3.0.0-alpha",
       "common-tags": "^1.8.0",
-      "moment": "^2.25.1"
+      "moment": "^2.25.3"
    },
    "devDependencies": {
       "@types/chart.js": "^2.9.20",

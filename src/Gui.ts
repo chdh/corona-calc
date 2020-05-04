@@ -32,7 +32,7 @@ function setChartParms (parentElement: HTMLElement, parms: ChartParms) {
    set(".regionChartMode",   parms.mode);
    set(".regionChartAbsRel", parms.absRel);
    set(".regionChartScale",  parms.scale);
-   const e1 = parms.mode != "growth";
+   const e1 = parms.mode != "trend";
    show(".regionChartScale", e1);
    function set (sel: string, value: string) {
       (<HTMLSelectElement>parentElement.querySelector(sel))!.value = value; }
@@ -62,7 +62,7 @@ function openChart (regionTableEntryElement: HTMLElement, regionNdx: number) {
          <option value="daily">Daily</option>
          <option value="cumulative">Cumulative</option>
          <option value="dailyAvgCum">Daily / cumulative</option>
-         <option value="growth">Growth (${Calc.calcParms.growthDays}-day avg.)</option>
+         <option value="trend">Trend (${Calc.calcParms.trendDays}-day avg.)</option>
         </select>
         <select class="regionChartAbsRel">
          <option value="rel">Relative</option>
@@ -116,18 +116,22 @@ function renderRegionTable (selection: number[], sortOrder: string) {
       <div class="regionTableHeader">
        <div class="w200 orderClick" data-sort-order="name">Region (country / state) ${sortOrder == "name" ? orderAscIndicator : ""}</div>
        <div class="w100r orderClick" data-sort-order="populationDesc">Population ${sortOrder == "populationDesc" ? orderDescIndicator : ""}</div>
-       <div class="w140r">
-        <div class="orderClick" data-sort-order="deathsRelDesc">Reported deaths</div>
+       <div class="w250">
+        <div class="columnHeader2 orderClick" data-sort-order="deathsRelDesc">Reported deaths</div>
         <div class="columnHeaderLine">
-         <div class="w80r orderClick" data-sort-order="deathsAbsDesc">abs. ${sortOrder == "deathsAbsDesc" ? orderDescIndicator : ""}</div>
-         <div class="w60r orderClick" data-sort-order="deathsRelDesc">rel. ${sortOrder == "deathsRelDesc" ? orderDescIndicator : ""}</div>
+         <div class="w80r orderClick" data-sort-order="deathsAbsDesc">Abs. ${sortOrder == "deathsAbsDesc" ? orderDescIndicator : ""}</div>
+         <div class="w60r orderClick" data-sort-order="deathsRelDesc">Rel. ${sortOrder == "deathsRelDesc" ? orderDescIndicator : ""}</div>
+         <div class="w60r orderClick" data-sort-order="deathsDailyDesc">Daily ${sortOrder == "deathsDailyDesc" ? orderDescIndicator : ""}</div>
+         <div class="w50r orderClick" data-sort-order="deathsTrendDesc">${sortOrder == "deathsTrendDesc" ? "Tr. " + orderDescIndicator : "Trend"}</div>
         </div>
        </div>
-       <div class="w140r">
-        <div class="orderClick" data-sort-order="casesRelDesc">Reported cases</div>
+       <div class="w250">
+        <div class="columnHeader2 orderClick" data-sort-order="casesRelDesc">Reported cases</div>
         <div class="columnHeaderLine">
-         <div class="w80r orderClick" data-sort-order="casesAbsDesc">abs. ${sortOrder == "casesAbsDesc" ? orderDescIndicator : ""}</div>
-         <div class="w60r orderClick" data-sort-order="casesRelDesc">rel. ${sortOrder == "casesRelDesc" ? orderDescIndicator : ""}</div>
+         <div class="w80r orderClick" data-sort-order="casesAbsDesc">Abs. ${sortOrder == "casesAbsDesc" ? orderDescIndicator : ""}</div>
+         <div class="w60r orderClick" data-sort-order="casesRelDesc">Rel. ${sortOrder == "casesRelDesc" ? orderDescIndicator : ""}</div>
+         <div class="w60r orderClick" data-sort-order="casesDailyDesc">Daily ${sortOrder == "casesDailyDesc" ? orderDescIndicator : ""}</div>
+         <div class="w50r orderClick" data-sort-order="casesTrendDesc">${sortOrder == "casesTrendDesc" ? "Tr. " + orderDescIndicator : "Trend"}</div>
         </div>
        </div>
        <div class="w80r orderClick" data-sort-order="cfrDesc" title="Overall case fatality rate, taking into account the time\nlag between reported cases and reported deaths">CFR ${sortOrder == "cfrDesc" ? orderDescIndicator : ""}</div>
@@ -136,16 +140,22 @@ function renderRegionTable (selection: number[], sortOrder: string) {
       const regionNdx = selection[selPos];
       const dr = regionDataTable[regionNdx];
       const cr = regionCalcTable[regionNdx];
+      const deathsDailyRel = (cr.deathsDaily ?? NaN) / (dr.population ?? NaN);
+      const casesDailyRel = (cr.casesDaily ?? NaN) / (dr.population ?? NaN);
       html += strip`
          <div class="regionTableEntry" data-region-ndx="${regionNdx}">
           <div class="openCloseButton"></div>
           <div class="regionDataBlock">
            <div class="w200">${escapeHtml(dr.combinedName)}</div>
            <div class="w100r">${formatNumber(dr.population)}</div>
-           <div class="w80r">${formatNumber(cr.latestDeaths)}</div>
-           <div class="w60r">${formatPercent((cr.latestDeaths ?? NaN) / (dr.population ?? NaN), 3)}</div>
-           <div class="w80r">${formatNumber(cr.latestCases)}</div>
-           <div class="w60r">${formatPercent((cr.latestCases ?? NaN) / (dr.population ?? NaN), 3)}</div>
+           <div class="w80r">${formatNumber(cr.deaths)}</div>
+           <div class="w60r">${formatPercent((cr.deaths ?? NaN) / (dr.population ?? NaN), 3)}</div>
+           <div class="w60r ${dailyLevel(deathsDailyRel, 0.00001)}">${formatPercent(deathsDailyRel, 4)}</div>
+           <div class="w50r ${trendLevel(cr.deathsTrend)}">${formatPercent((cr.deathsTrend ?? NaN) / 100, 0, true)}</div>
+           <div class="w80r">${formatNumber(cr.cases)}</div>
+           <div class="w60r">${formatPercent((cr.cases ?? NaN) / (dr.population ?? NaN), 3)}</div>
+           <div class="w60r ${dailyLevel(casesDailyRel, 0.0001)}">${formatPercent(casesDailyRel, 4)}</div>
+           <div class="w50r ${trendLevel(cr.casesTrend)}">${formatPercent((cr.casesTrend ?? NaN) / 100, 0, true)}</div>
            <div class="w80r">${formatPercent(cr.cfr ?? NaN, 1)}</div>
           </div>
          </div>`; }
@@ -155,6 +165,20 @@ function renderRegionTable (selection: number[], sortOrder: string) {
    for (const buttonElement of <NodeListOf<HTMLElement>>document.querySelectorAll(".openCloseButton")) {
       buttonElement.addEventListener("click", (event: MouseEvent) => catchError(openCloseButton_click, event));
       setOpenCloseButtonSymbol(buttonElement, false); }}
+
+function trendLevel (v: number | undefined) {
+   return (
+      v == undefined || !isFinite(v) ? "" :
+      v > 2 ? "levelHi" :
+      v < -2 ? "levelLo" :
+      "levelMed"); }
+
+function dailyLevel (v: number | undefined, treshold: number) {
+   return (
+      v == undefined || !isFinite(v) ? "" :
+      v > treshold ? "levelHi" :
+      v > treshold / 10 ? "levelMed" :
+      "levelLo"); }
 
 function getSelectionParms() : SelectionParms {
    const selParms = <SelectionParms>{};
@@ -167,7 +191,7 @@ function getSelectionParms() : SelectionParms {
 function getCalcParms() : CalcParms {
    const calcParms = <CalcParms>{};
    calcParms.caseDeathTimeLag = DomUtils.getValueNumReq("caseDeathTimeLag");
-   calcParms.growthDays       = DomUtils.getValueNumReq("growthDays");
+   calcParms.trendDays        = DomUtils.getValueNumReq("trendDays");
    calcParms.dailyAvgDays     = 7;
    return calcParms; }
 

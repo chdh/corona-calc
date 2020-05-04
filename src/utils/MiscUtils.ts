@@ -35,10 +35,11 @@ export function escapeHtml (s: string) : string {
       out += s.substring(p2); }
    return out; }
 
-export function formatNumber (n: number | undefined) : string {
+export function formatNumber (n: number | undefined, includeSign: boolean = false) : string {
    if (n === undefined || !isFinite(n)) {
       return ""; }
-   return numberFormat.format(n).replace(/,/g, "\u2009"); }
+   const plusSign = (includeSign && n > 0) ? "+" : "";
+   return plusSign + numberFormat.format(n).replace(/,/g, "\u2009"); }
 
 // Returns undefined if the string does not contain a valid number.
 export function decodeNumber (s: string) : number | undefined {
@@ -47,10 +48,11 @@ export function decodeNumber (s: string) : number | undefined {
    const n = Number(s.replace(/\u2009/g, ""));
    return isFinite(n) ? n : undefined; }
 
-export function formatPercent (n: number | undefined, fractionDigits: number) : string {
+export function formatPercent (n: number | undefined, fractionDigits: number, includeSign: boolean = false) : string {
    if (n === undefined || !isFinite(n)) {
       return ""; }
-   return (n * 100).toFixed(fractionDigits) + "%"; }
+   const plusSign = (includeSign && n > 0) ? "+" : "";
+   return plusSign + (n * 100).toFixed(fractionDigits) + "%"; }
 
 export function formatDateIso (d: Moment) : string {
    return d.format("YYYY-MM-DD"); }
