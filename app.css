@@ -6,7 +6,7 @@ html {
    box-sizing: border-box; }
 
 body, button, input, select, textarea {
-   font-family: "Source Sans Pro", sans-serif;
+   font-family: "Source Sans Pro", serif;   /* we use "serif" as fallback instead of "sans-serif", because "sans-serif" is much wider than "Source Sans Pro" */
    font-size: inherit;
    line-height: 1.333; }
 
