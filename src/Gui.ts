@@ -12,7 +12,7 @@ import {ChartParms} from "./Chart";
 import * as DomUtils from "./utils/DomUtils";
 import {escapeHtml, formatNumber, formatPercent, formatDateIso, catchError} from "./utils/MiscUtils";
 
-const regionChartCanvasWidth  = 650;
+const regionChartCanvasWidth  = 870;
 const regionChartCanvasHeight = 300;
 
 let mruChartParms:           ChartParms | undefined;
@@ -79,7 +79,7 @@ function openChart (regionTableEntryElement: HTMLElement, regionNdx: number) {
       </div>`;
    regionTableEntryElement.insertAdjacentHTML("beforeend", html);
    const parmsElement = regionTableEntryElement.querySelector(".regionChartParms")!;
-   parmsElement.addEventListener("input", () => catchError(updateChart, regionTableEntryElement, regionNdx));
+   parmsElement.addEventListener("change", () => catchError(updateChart, regionTableEntryElement, regionNdx));
    const chartParms = mruChartParms ? mruChartParms : getChartParms(regionTableEntryElement);
    createChart(regionTableEntryElement, regionNdx, chartParms); }
 
@@ -134,7 +134,7 @@ function renderRegionTable (selection: number[], sortOrder: string) {
          <div class="w50r orderClick" data-sort-order="casesTrendDesc">${sortOrder == "casesTrendDesc" ? "Tr. " + orderDescIndicator : "Trend"}</div>
         </div>
        </div>
-       <div class="w80r orderClick" data-sort-order="cfrDesc" title="Overall case fatality rate, taking into account the time\nlag between reported cases and reported deaths">CFR ${sortOrder == "cfrDesc" ? orderDescIndicator : ""}</div>
+       <div class="w60r orderClick" data-sort-order="cfrDesc" title="Overall case fatality rate, taking into account the time\nlag between reported cases and reported deaths">CFR ${sortOrder == "cfrDesc" ? orderDescIndicator : ""}</div>
       </div>`;
    for (let selPos = 0; selPos < selection.length; selPos++) {
       const regionNdx = selection[selPos];
@@ -156,7 +156,7 @@ function renderRegionTable (selection: number[], sortOrder: string) {
            <div class="w60r">${formatPercent((cr.cases ?? NaN) / (dr.population ?? NaN), 3)}</div>
            <div class="w60r ${dailyLevel(casesDailyRel, 0.0001)}">${formatPercent(casesDailyRel, 4)}</div>
            <div class="w50r ${trendLevel(cr.casesTrend)}">${formatPercent((cr.casesTrend ?? NaN) / 100, 0, true)}</div>
-           <div class="w80r">${formatPercent(cr.cfr ?? NaN, 1)}</div>
+           <div class="w60r">${formatPercent(cr.cfr ?? NaN, 1)}</div>
           </div>
          </div>`; }
    document.getElementById("regionTable")!.innerHTML = html;
