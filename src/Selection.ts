@@ -17,7 +17,7 @@ export function createSelection (selParms: SelectionParms) : number[] {
       const cr = regionCalcTable[regionNdx];
       if (selParms.minPopulation && selParms.minPopulation > (dr.population ?? -1)) {
          continue; }
-      if (selParms.minDeaths && selParms.minDeaths > (cr.deaths ?? -1)) {
+      if (selParms.minDeaths && selParms.minDeaths > (cr.deathsTotal ?? -1)) {
          continue; }
       if (selParms.countriesOnly && !dr.isCountry) {
          continue; }
@@ -35,16 +35,16 @@ export function createSelection (selParms: SelectionParms) : number[] {
          case "populationDesc": {
             return (dr2.population ?? -1) - (dr1.population ?? -1) || nameSort; }
          case "casesAbsDesc": {
-            return (cr2.cases ?? -1) - (cr1.cases ?? -1) || nameSort; }
+            return (cr2.casesTotal ?? -1) - (cr1.casesTotal ?? -1) || nameSort; }
          case "deathsAbsDesc": {
-            return (cr2.deaths ?? -1) - (cr1.deaths ?? -1) || nameSort; }
+            return (cr2.deathsTotal ?? -1) - (cr1.deathsTotal ?? -1) || nameSort; }
          case "casesRelDesc": {
-            const r1 = (cr1.cases ?? -1) / (dr1.population ?? Infinity);
-            const r2 = (cr2.cases ?? -1) / (dr2.population ?? Infinity);
+            const r1 = (cr1.casesTotal ?? -1) / (dr1.population ?? Infinity);
+            const r2 = (cr2.casesTotal ?? -1) / (dr2.population ?? Infinity);
             return r2 - r1 || nameSort; }
          case "deathsRelDesc": {
-            const r1 = (cr1.deaths ?? -1) / (dr1.population ?? Infinity);
-            const r2 = (cr2.deaths ?? -1) / (dr2.population ?? Infinity);
+            const r1 = (cr1.deathsTotal ?? -1) / (dr1.population ?? Infinity);
+            const r2 = (cr2.deathsTotal ?? -1) / (dr2.population ?? Infinity);
             return r2 - r1 || nameSort; }
          case "casesDailyDesc": {
             const r1 = vn(cr1.casesDaily, -1) / (dr1.population ?? Infinity);

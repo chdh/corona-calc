@@ -8,8 +8,10 @@ export interface CalcParms {                               // calculation parame
    trendDays:                number; }                     // number of days over which to average for the trend calculation (second derivative)
 
 export interface RegionCalcRecord {
-   cases?:                   number;                       // latest number of reported cases
-   deaths?:                  number;                       // latest number of reported deaths
+   casesCleaned?:            Float64Array;                 // cleaned reported cases time series
+   deathsCleaned?:           Float64Array;                 // cleaned reported deaths time series
+   casesTotal?:              number;                       // latest number of reported cases
+   deathsTotal?:             number;                       // latest number of reported deaths
    casesDaily?:              number;                       // average number of new cases in the last `dailyAvgDays` days
    deathsDaily?:             number;                       // average number of new deaths in the last `dailyAvgDays` days
    casesTrend?:              number;                       // latest relative trend of the reported cases
@@ -31,15 +33,40 @@ function buildRegionCalcTable() {
 function buildRegionCalcRecord (regionNdx: number) : RegionCalcRecord {
    const dr = regionDataTable[regionNdx];
    const cr = <RegionCalcRecord>{};
-   cr.cases = dr.cases?.[days - 1];
-   cr.deaths = dr.deaths?.[days - 1];
+   cr.casesCleaned = dr.cases ? cleanCumulativeTimeSeries(dr.cases) : undefined;
+   cr.deathsCleaned = dr.deaths ? cleanCumulativeTimeSeries(dr.deaths) : undefined;
+   cr.casesTotal = dr.cases?.[days - 1];
+   cr.deathsTotal = dr.deaths?.[days - 1];
    cr.casesDaily = dr.cases ? getDerivative(dr.cases, days - 1, calcParms.dailyAvgDays) : undefined;
    cr.deathsDaily = dr.deaths ? getDerivative(dr.deaths, days - 1, calcParms.dailyAvgDays) : undefined;
-   cr.casesTrend = dr.cases ? getTrend(dr.cases, days - 1, true) : undefined;
-   cr.deathsTrend = dr.deaths ? getTrend(dr.deaths, days - 1, true) : undefined;
+   cr.casesTrend = cr.casesCleaned ? getTrend(cr.casesCleaned, days - 1, true) : undefined;
+   cr.deathsTrend = cr.deathsCleaned ? getTrend(cr.deathsCleaned, days - 1, true) : undefined;
    const laggedCases = dr.cases?.[Math.max(0, days - 1 - calcParms.caseDeathTimeLag)];   // number of reported cases `caseDeathTimeLag` days before
-   cr.cfr = (cr.deaths != undefined && laggedCases) ? cr.deaths / laggedCases : undefined;
+   cr.cfr = (cr.deathsTotal != undefined && laggedCases) ? cr.deathsTotal / laggedCases : undefined;
    return cr; }
+
+// Removes artefacts from the time series.
+// The result must only be used for daily and trend calculations. Cumulative values are not valid in the result.
+function cleanCumulativeTimeSeries (a: Float64Array) : Float64Array {
+   const n = a.length;
+   const a2 = new Float64Array(n);
+   let offset = 0;
+   for (let i = 0; i < n; i++) {
+      const v = a[i];
+      if (i < 1 || !isFinite(v)) {
+         a2[i] = v;
+         continue; }
+      const d = v - a[i - 1];
+      if (d < 0) {                                         // ignore negative derivative
+         offset -= d; }
+       else if (v > 200 && d / v > 0.15 && i >= 10) {
+         const d2a = getDerivative(a2, i - 2, 5);
+         const d2b = getDerivative(a, i - 2, 5);
+         const d2Max = Math.max(d2a, d2b);
+         if (d / d2Max > 5) {
+            offset -= d - d2Max; }}
+      a2[i] = v + offset; }
+   return a2; }
 
 export function differentiate (a: Float64Array, w: number) : Float64Array {
    const n = a.length;
@@ -92,3 +119,23 @@ export function movingAverage (a: Float64Array, w: number) : Float64Array {
       sum += a[i];
       a2[i] = sum / w; }
    return a2; }
+
+export function getCfrSeries (regionNdx: number) : Float64Array {
+   const a = new Float64Array(days);
+   for (let i = 0; i < days; i++) {
+      a[i] = getCfr(regionNdx, i); }
+   return a; }
+
+// Computes the case fatality rate in percent.
+function getCfr (regionNdx: number, i: number) : number {
+   const cr = regionCalcTable[regionNdx];
+   if (i <= calcParms.caseDeathTimeLag || !cr.deathsCleaned || !cr.casesCleaned) {
+      return NaN; }
+   const dd = getDerivative(cr.deathsCleaned, i, calcParms.dailyAvgDays);
+   const dc = getDerivative(cr.casesCleaned, i - calcParms.caseDeathTimeLag, calcParms.dailyAvgDays);
+   if (dd <= 0 || dc < 100) {
+      return NaN; }
+   const r = dd / dc * 100;
+   if (r >= 50) {
+      return NaN; }
+   return r; }

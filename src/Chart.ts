@@ -1,6 +1,6 @@
 import {regions, firstDay, lastDay, days, regionDataTable, RegionDataRecord} from "./DataSource";
 import {formatNumber, formatPercent} from "./utils/MiscUtils";
-import {calcParms} from "./Calc";
+import {calcParms, regionCalcTable, RegionCalcRecord} from "./Calc";
 import * as Calc from "./Calc";
 import ChartJs_Chart from "chart.js";
 import * as ChartJs from "chart.js";
@@ -8,8 +8,8 @@ import moment from "moment";
 import "./tempExtSource/chartjs-adapter-moment.js";        // imported for side-effects only
 
 export interface ChartParms {                              // chart parameters
-   source:                   string;                       // "deaths", "cases"
-   mode:                     string;                       // "daily", "dailyAvg", "cumulative", "dailyAvgCum", "trend"
+   source:                   string;                       // "deaths", "cases", "cfr"
+   mode:                     string;                       // "daily", "dailyAvg", "cumulative", "cleaned" (only for testing), "dailyAvgCum", "trend"
    absRel:                   string;                       // "abs" = absolute, "rel" = relative values
    scale:                    string; }                     // "lin" = linear, "log" = logarithmic
 
@@ -27,6 +27,7 @@ class ChartController {
    private canvas:           HTMLCanvasElement;
    private regionNdx:        number;
    private dataRecord:       RegionDataRecord;
+   private calcRecord:       RegionCalcRecord;
    private chartParms:       ChartParms;
    private chart?:           ChartJs_Chart;
    private dataPoints:       ChartJs.ChartPoint[];
@@ -35,7 +36,8 @@ class ChartController {
    constructor (canvas: HTMLCanvasElement, regionNdx: number) {
       this.canvas = canvas;
       this.regionNdx = regionNdx;
-      this.dataRecord = regionDataTable[this.regionNdx]; }
+      this.dataRecord = regionDataTable[this.regionNdx];
+      this.calcRecord = regionCalcTable[this.regionNdx]; }
 
    // Creates the data points and sets `dataMinMax`.
    public prepare (chartParms: ChartParms) {
@@ -62,7 +64,8 @@ class ChartController {
    //--- Data points -----------------------------------------------------------
 
    private genChartDataPoints() : ChartJs.ChartPoint[] {
-      if (this.chartParms.mode == "dailyAvgCum") {
+      const chartParms = this.chartParms;
+      if (chartParms.mode == "dailyAvgCum" && chartParms.source != "cfr") {
          return this.genXyChartDataPoints(); }
        else {
          return this.genTimeChartDataPoints(); }}
@@ -93,11 +96,18 @@ class ChartController {
       const chartParms = this.chartParms;
       let sourceVals: Float64Array | undefined;
       switch (chartParms.source) {
-         case "deaths": sourceVals = this.dataRecord.deaths; break;
-         case "cases":  sourceVals = this.dataRecord.cases;  break;
-         default: throw new Error("Unknown source."); }
+         case "deaths": {
+            sourceVals = (mode2 == "cumulative") ? this.dataRecord.deaths : this.calcRecord.deathsCleaned;
+            break; }
+         case "cases": {
+            sourceVals = (mode2 == "cumulative") ? this.dataRecord.cases : this.calcRecord.casesCleaned;
+            break; }
+         case "cfr": {
+            return Calc.getCfrSeries(this.regionNdx); }
+         default: {
+            throw new Error("Unknown source."); }}
       if (!sourceVals) {
-         throw new Error("Not source data values available."); }
+         throw new Error("No source data values available."); }
       let vals: Float64Array;
       switch (mode2) {
          case "daily":    vals = Calc.differentiate(sourceVals, 1); break;
@@ -127,23 +137,24 @@ class ChartController {
 
    private createChartConfig (xySync: XyMinMax) : ChartJs.ChartConfiguration {
       const chartParms = this.chartParms;
-      const isTrend = chartParms.mode == "trend";
-      const isXy = chartParms.mode == "dailyAvgCum";
+      const isCfr = chartParms.source == "cfr";
+      const isTrend = !isCfr && chartParms.mode == "trend";
+      const isXy = !isCfr && chartParms.mode == "dailyAvgCum";
       const fontColor = "#000";
       const dateFormat = "YYYY-MM-DD";
       const yDataSet: /* ChartJs.ChartDataSets */ any = {
-         borderColor:     (chartParms.source == "deaths") ? "#FF6B5F" : "#0066FF",
-         backgroundColor: isTrend ? "rgba(0,0,0,0.15)" : (chartParms.source == "deaths") ? "#FDDED6" : "#D8E7FE",
+         borderColor:     isCfr ? "rgb(247,213,0)" : (chartParms.source == "deaths") ? "#FF6B5F" : "#0066FF",
+         backgroundColor: isCfr ? "rgba(247,213,0,0.15)" : isTrend ? "rgba(0,0,0,0.15)" : (chartParms.source == "deaths") ? "#FDDED6" : "#D8E7FE",
          lineTension: 0,
          borderJoinStyle: "round",
          parsing: false,
          data: this.dataPoints };
       const datasets: ChartJs.ChartDataSets[] = [yDataSet];
       const isXAxisLog = isXy && chartParms.scale == "log";
-      const isYAxisLog = chartParms.scale == "log" && !isTrend;
-      const valAxisType = (chartParms.scale == "log" && !isTrend) ? "logarithmic" : "linear";
+      const isYAxisLog = !isTrend && !isCfr && chartParms.scale == "log";
+      const valAxisType = (!isTrend && !isCfr && chartParms.scale == "log") ? "logarithmic" : "linear";
       const valAxisMin =
-         (chartParms.scale == "lin") ? 0 :
+         (isCfr || chartParms.scale == "lin") ? 0 :
          (chartParms.absRel == "abs") ? 1 :
          xySync.yMin ?? (100 / (this.dataRecord.population ?? 1000));
       const xAxisType = isXy ? valAxisType : "time";
@@ -244,8 +255,10 @@ class ChartController {
 
    private formatLabel (value: any, isYAxis: boolean, extendedFormat: boolean, unit?: any) : string {
       const chartParms = this.chartParms;
-      const isTrend = chartParms.mode == "trend";
+      const isCfr = chartParms.source == "cfr";
+      const isTrend = !isCfr && chartParms.mode == "trend";
       const type =
+         isCfr ? (isYAxis ? "rel" : "time") :
          (isYAxis || chartParms.mode == "dailyAvgCum") ? chartParms.absRel :
          "time";
       switch (type) {
@@ -269,10 +282,12 @@ class ChartController {
    private genLabelLegend (isYAxis: boolean) {
       const chartParms = this.chartParms;
       // (not yet used for time values)
+      if (chartParms.source == "cfr") {
+         return `case fatality rate (${Calc.calcParms.caseDeathTimeLag} days cases/deaths time-lag, ${Calc.calcParms.dailyAvgDays} days average)`; }
       const isTrend = isYAxis && chartParms.mode == "trend";
       const avg = chartParms.mode == "dailyAvg" || (chartParms.mode == "dailyAvgCum" && isYAxis) || isTrend;
       const avgDays = isTrend ? calcParms.trendDays : calcParms.dailyAvgDays;
-      const cumulative = chartParms.mode == "cumulative" || chartParms.mode == "dailyAvgCum" && !isYAxis;
+      const cumulative = chartParms.mode == "cumulative" || chartParms.mode == "cleaned" || chartParms.mode == "dailyAvgCum" && !isYAxis;
       const daily = !cumulative;
       return (cumulative ? "cumulative " : "") +
          chartParms.source +
@@ -339,6 +354,8 @@ function genXySync (chartParms: ChartParms) : XyMinMax {
    if (activeCharts <= 1) {
       return {}; }
    const mm = getOverallDataMinMax();
+   if (chartParms.source == "cfr") {
+      return {yMax: mm.yMax}; }
    const valAxisMin = (chartParms.scale == "log" && chartParms.absRel == "rel") ? 1E-5 : undefined;
    switch (chartParms.mode) {
       case "trend": {

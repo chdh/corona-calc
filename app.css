@@ -202,7 +202,8 @@ div.actionButtons button {
 
 .regionChartParms {
    margin-top: 5px;
-   display: flex; }
+   display: flex;
+   align-items: center; }
 .regionChartParms select {
    margin-left: 10px; }
 .regionChartParms select:first-child {
@@ -211,6 +212,9 @@ div.actionButtons button {
    margin-left: 15px; }
 .regionChartParms input[type="checkbox"] {
    margin-left: 10px; }
+.regionChartParms .info {
+   margin-left: 10px;
+   font-size: 14px; }
 
 div.regionChartContainer {
    border: 1px solid #aaa;

@@ -38,12 +38,20 @@ function setChartParms (parentElement: Element, parms: ChartParmsExt) {
    set(".regionChartAbsRel", parms.absRel);
    set(".regionChartScale",  parms.scale);
    setChecked(".sync",       parms.sync);
-   const e1 = parms.mode != "trend";
-   show(".regionChartScale", e1);
+   const e1 = parms.source != "cfr";
+   const e2 = parms.mode != "trend";
+   show(".regionChartMode", e1);
+   show(".regionChartAbsRel", e1);
+   show(".regionChartScale", e1 && e2);
+   show(".info", !e1);
+   setText(".info", parms.source != "cfr" ? "" :
+      `(Case fatality rate with ${Calc.calcParms.caseDeathTimeLag} days cases/deaths time-lag, ${Calc.calcParms.dailyAvgDays}-day average)`);
    function set (sel: string, value: string) {
       (<HTMLSelectElement>parentElement.querySelector(sel))!.value = value; }
    function setChecked (sel: string, checked: boolean) {
       (<HTMLInputElement>parentElement.querySelector(sel))!.checked = checked; }
+   function setText (sel: string, text: string) {
+      parentElement.querySelector(sel)!.textContent = text; }
    function show (sel: string, visible: boolean) {
       parentElement.querySelector(sel)!.classList.toggle("hidden", !visible); }}
 
@@ -72,11 +80,13 @@ function openChart (regionTableEntryElement: HTMLElement, regionNdx: number) {
         <select class="regionChartSource">
          <option value="deaths">Deaths</option>
          <option value="cases">Cases</option>
+         <option value="cfr">CFR</option>
         </select>
         <select class="regionChartMode">
          <option value="dailyAvg">${Calc.calcParms.dailyAvgDays}-day average</option>
          <option value="daily">Daily</option>
          <option value="cumulative">Cumulative</option>
+         <!-- <option value="cleaned">Cleaned</option> -->
          <option value="dailyAvgCum">Daily / cumulative</option>
          <option value="trend">Trend (${Calc.calcParms.trendDays}-day avg.)</option>
         </select>
@@ -88,7 +98,8 @@ function openChart (regionTableEntryElement: HTMLElement, regionNdx: number) {
          <option value="lin">Linear</option>
          <option value="log">Logarithmic</option>
         </select>
-        <label for="sync_${regionNdx}">Sync:</label>
+        <div class="info"></div>
+        <label for="sync_${regionNdx}" title="Synchronize all charts">Sync:</label>
         <input id="sync_${regionNdx}" class="sync" type="checkbox" checked>
        </div>
        <div class="regionChartContainer">
@@ -168,12 +179,12 @@ function renderRegionTable (selection: number[], sortOrder: string) {
           <div class="regionDataBlock">
            <div class="w200">${escapeHtml(dr.combinedName)}</div>
            <div class="w100r">${formatNumber(dr.population)}</div>
-           <div class="w80r">${formatNumber(cr.deaths)}</div>
-           <div class="w60r">${formatPercent((cr.deaths ?? NaN) / (dr.population ?? NaN), 3)}</div>
+           <div class="w80r">${formatNumber(cr.deathsTotal)}</div>
+           <div class="w60r">${formatPercent((cr.deathsTotal ?? NaN) / (dr.population ?? NaN), 3)}</div>
            <div class="w60r ${dailyLevel(deathsDailyRel, 0.00001)}">${formatPercent(deathsDailyRel, 4)}</div>
            <div class="w50r ${trendLevel(cr.deathsTrend)}">${formatPercent((cr.deathsTrend ?? NaN) / 100, 0, true)}</div>
-           <div class="w80r">${formatNumber(cr.cases)}</div>
-           <div class="w60r">${formatPercent((cr.cases ?? NaN) / (dr.population ?? NaN), 3)}</div>
+           <div class="w80r">${formatNumber(cr.casesTotal)}</div>
+           <div class="w60r">${formatPercent((cr.casesTotal ?? NaN) / (dr.population ?? NaN), 3)}</div>
            <div class="w60r ${dailyLevel(casesDailyRel, 0.0001)}">${formatPercent(casesDailyRel, 4)}</div>
            <div class="w50r ${trendLevel(cr.casesTrend)}">${formatPercent((cr.casesTrend ?? NaN) / 100, 0, true)}</div>
            <div class="w60r">${formatPercent(cr.cfr ?? NaN, 1)}</div>
