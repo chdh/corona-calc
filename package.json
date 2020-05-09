@@ -8,7 +8,7 @@
    "devDependencies": {
       "@types/chart.js": "^2.9.20",
       "@types/common-tags": "^1.8.0",
-      "rollup": "^2.7.6",
+      "rollup": "^2.8.2",
       "rollup-plugin-node-resolve": "^5.2.0"
    },
    "scripts": {

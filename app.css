@@ -207,6 +207,10 @@ div.actionButtons button {
    margin-left: 10px; }
 .regionChartParms select:first-child {
    margin-left: 0; }
+.regionChartParms label {
+   margin-left: 15px; }
+.regionChartParms input[type="checkbox"] {
+   margin-left: 10px; }
 
 div.regionChartContainer {
    border: 1px solid #aaa;

@@ -13,116 +13,53 @@ export interface ChartParms {                              // chart parameters
    absRel:                   string;                       // "abs" = absolute, "rel" = relative values
    scale:                    string; }                     // "lin" = linear, "log" = logarithmic
 
+export interface XyMinMax {
+   xMin?:                    number;
+   xMax?:                    number;
+   yMin?:                    number;
+   yMax?:                    number; }
+
 var chartControllers:        (ChartController | undefined)[];
+var activeCharts:            number = 0;
 
 class ChartController {
 
+   private canvas:           HTMLCanvasElement;
    private regionNdx:        number;
    private dataRecord:       RegionDataRecord;
    private chartParms:       ChartParms;
-   private chart:            ChartJs_Chart;
+   private chart?:           ChartJs_Chart;
+   private dataPoints:       ChartJs.ChartPoint[];
+   public  dataMinMax:       XyMinMax;
 
-   constructor (canvas: HTMLCanvasElement, regionNdx: number, chartParms: ChartParms) {
+   constructor (canvas: HTMLCanvasElement, regionNdx: number) {
+      this.canvas = canvas;
       this.regionNdx = regionNdx;
-      this.dataRecord = regionDataTable[this.regionNdx];
+      this.dataRecord = regionDataTable[this.regionNdx]; }
+
+   // Creates the data points and sets `dataMinMax`.
+   public prepare (chartParms: ChartParms) {
+      this.destroyChart();
       this.chartParms = chartParms;
-      const ctx = canvas.getContext('2d')!;
-      const chartConfig = this.createChartConfig();
+      this.dataPoints = this.genChartDataPoints();
+      this.dataMinMax = this.findDataPointsMinMax(this.dataPoints); }
+
+   // Displays the chart.
+   public complete (xySync: XyMinMax) {
+      this.destroyChart();
+      const chartConfig = this.createChartConfig(xySync);
+      const ctx = this.canvas.getContext('2d')!;
       this.chart = new ChartJs_Chart(ctx, chartConfig); }
 
    public destroy() {
-      this.chart.destroy(); }
+      this.destroyChart(); }
 
-   private createChartConfig() : ChartJs.ChartConfiguration {
-      const chartParms = this.chartParms;
-      const isTrend = chartParms.mode == "trend";
-      const isXy = chartParms.mode == "dailyAvgCum";
-      const fontColor = "#000";
-      const dateFormat = "YYYY-MM-DD";
-      const dataPoints = this.genChartDataPoints();
-      const yDataSet: /* ChartJs.ChartDataSets */ any = {
-         borderColor:     (chartParms.source == "deaths") ? "#FF6B5F" : "#0066FF",
-         backgroundColor: isTrend ? "rgba(0,0,0,0.15)" : (chartParms.source == "deaths") ? "#FDDED6" : "#D8E7FE",
-         lineTension: 0,
-         borderJoinStyle: "round",
-         parsing: false,
-         data: dataPoints };
-      const datasets: ChartJs.ChartDataSets[] = [yDataSet];
-      const yAxisType = (chartParms.scale == "log" && !isTrend) ? "logarithmic" : "linear";
-      const {yMin, yMax} = this.findDataPointsMinMax(dataPoints);
-      const yAbsMax = Math.max(Math.abs(yMin), Math.abs(yMax));
-      const yMaxTrend = Math.ceil(Math.max(1, yAbsMax));
-      const yAxisMin =
-         isTrend ? undefined :
-         (chartParms.scale == "lin") ? 0 :
-         (chartParms.absRel == "abs") ? 1 :
-         100 / (this.dataRecord.population ?? 1000);
-      const yAxisMax = undefined;
-      const yAxisSuggestedMin = isTrend ? -yMaxTrend : undefined;
-      const yAxisSuggestedMax = isTrend ? yMaxTrend : undefined;
-      const isXAsisLog = isXy && chartParms.scale == "log";
-      const isYAsisLog = chartParms.scale == "log" && !isTrend;
-      const scales: /* ChartJs.ChartScales */ any = {
-         x: {
-            type: isXy ? yAxisType : "time",
-            min: isXy ? yAxisMin : firstDay.format(dateFormat),
-            max: isXy ? undefined : lastDay.clone().add(1, "d").format(dateFormat),
-            time: {
-               parser: dateFormat,
-               unit: "week",
-               isoWeekday: true,
-               displayFormats: {
-                  week: "MMM D" }},
-            ticks: {
-               maxTicksLimit: isXAsisLog ? 12 : undefined,
-               fontColor,
-               callback: (value: any, index: number, values: any) => this.ticksCallback(value, index, values, false, isXAsisLog) }},
-         y: {
-            type: yAxisType,
-            min: yAxisMin,
-            max: yAxisMax,
-            suggestedMin: yAxisSuggestedMin,
-            suggestedMax: yAxisSuggestedMax,
-      //    scaleLabel: {
-      //       display: true,
-      //       labelString: "...",
-      //       fontColor },
-            ticks: {
-      //       beginAtZero: true,
-               maxTicksLimit: isYAsisLog ? 9 : 11,
-               fontColor,
-               callback: (value: any, index: number, values: any) => this.ticksCallback(value, index, values, true, isYAsisLog) }}};
-      const elementsOptions: ChartJs.ChartElementsOptions = {
-      // point: {
-      //    radius: 0 }
-         };
-      const legendOptions: ChartJs.ChartLegendOptions = {
-         display: false };
-      const tooltipOptions: ChartJs.ChartTooltipOptions = {
-         displayColors: false,
-         callbacks: {
-            title: (items: ChartJs.ChartTooltipItem[], data: ChartJs.ChartData) => this.tooltipTitleCallback(items, data),
-            label: (item: ChartJs.ChartTooltipItem, data: ChartJs.ChartData) => this.tooltipLabelCallback(item, data, isXy) }};
-      const options: ChartJs.ChartOptions = {
-      // animation: {duration: 0},
-         scales,
-         elements: elementsOptions,
-         legend: legendOptions,
-         tooltips: tooltipOptions,
-         responsive: false };
-      return {
-         type: "line",
-         data: { datasets },
-         options }; }
+   private destroyChart() {
+      if (this.chart) {
+         this.chart.destroy();
+         this.chart = undefined; }}
 
-   private findDataPointsMinMax (dataPoints: ChartJs.ChartPoint[]) {
-      let yMin = Infinity;
-      let yMax = -Infinity;
-      for (const p of dataPoints) {
-         if (typeof p.y == "number" && isFinite(p.y)) {
-            yMin = Math.min(yMin, p.y);
-            yMax = Math.max(yMax, p.y); }}
-      return {yMin, yMax}; }
+   //--- Data points -----------------------------------------------------------
 
    private genChartDataPoints() : ChartJs.ChartPoint[] {
       if (this.chartParms.mode == "dailyAvgCum") {
@@ -168,6 +105,114 @@ class ChartController {
          case "trend":    return Calc.getTrendSeries(sourceVals, chartParms.absRel == "rel");
          default:         vals = sourceVals; }
       return this.prepRelLogValues(vals); }
+
+   private findDataPointsMinMax (dataPoints: ChartJs.ChartPoint[]) : XyMinMax {
+      const mm = <XyMinMax>{};
+      for (const p of dataPoints) {
+         mm.xMin = min(mm.xMin, p.x);
+         mm.xMax = max(mm.xMax, p.x);
+         mm.yMin = max(mm.yMin, p.y);
+         mm.yMax = max(mm.yMax, p.y); }
+      return mm;
+      function min (v1: number|undefined, v2: any) : number | undefined {
+         if (typeof v2 == "number" && isFinite(v2)) {
+            return (v1 == undefined || v2 < v1) ? v2 : v1; }
+         return v1; }
+      function max (v1: number|undefined, v2: any) : number | undefined {
+         if (typeof v2 == "number" && isFinite(v2)) {
+            return (v1 == undefined || v2 > v1) ? v2 : v1; }
+         return v1; }}
+
+   //---------------------------------------------------------------------------
+
+   private createChartConfig (xySync: XyMinMax) : ChartJs.ChartConfiguration {
+      const chartParms = this.chartParms;
+      const isTrend = chartParms.mode == "trend";
+      const isXy = chartParms.mode == "dailyAvgCum";
+      const fontColor = "#000";
+      const dateFormat = "YYYY-MM-DD";
+      const yDataSet: /* ChartJs.ChartDataSets */ any = {
+         borderColor:     (chartParms.source == "deaths") ? "#FF6B5F" : "#0066FF",
+         backgroundColor: isTrend ? "rgba(0,0,0,0.15)" : (chartParms.source == "deaths") ? "#FDDED6" : "#D8E7FE",
+         lineTension: 0,
+         borderJoinStyle: "round",
+         parsing: false,
+         data: this.dataPoints };
+      const datasets: ChartJs.ChartDataSets[] = [yDataSet];
+      const isXAxisLog = isXy && chartParms.scale == "log";
+      const isYAxisLog = chartParms.scale == "log" && !isTrend;
+      const valAxisType = (chartParms.scale == "log" && !isTrend) ? "logarithmic" : "linear";
+      const valAxisMin =
+         (chartParms.scale == "lin") ? 0 :
+         (chartParms.absRel == "abs") ? 1 :
+         xySync.yMin ?? (100 / (this.dataRecord.population ?? 1000));
+      const xAxisType = isXy ? valAxisType : "time";
+      const yAxisType = valAxisType;
+      const xAxisMin = isXy ? valAxisMin : firstDay.format(dateFormat);
+      const xAxisMax = isXy ? undefined : lastDay.clone().add(1, "d").format(dateFormat);
+      const xAxisSuggestedMin = xySync.xMin;
+      const xAxisSuggestedMax = xySync.xMax;
+      const yAbsMax = Math.max(Math.abs(this.dataMinMax.yMin ?? 0), Math.abs(this.dataMinMax.yMax ?? 0));
+      const yMaxTrend = Math.ceil(Math.max(1, yAbsMax));
+      const yAxisMin = isTrend ? undefined : valAxisMin;
+      const yAxisMax = isYAxisLog ? roundAxisLogMax(xySync.yMax) : undefined;
+      const yAxisSuggestedMin = xySync.yMin ?? (isTrend ? -yMaxTrend : undefined);
+      const yAxisSuggestedMax = xySync.yMax ?? (isTrend ? yMaxTrend : undefined);
+         // Note: yAxisSuggestedMax seems to have no effect for log axes.
+      const scales: /* ChartJs.ChartScales */ any = {
+         x: {
+            type: xAxisType,
+            min: xAxisMin,
+            max: xAxisMax,
+            suggestedMin: xAxisSuggestedMin,
+            suggestedMax: xAxisSuggestedMax,
+            time: {
+               parser: dateFormat,
+               unit: "week",
+               isoWeekday: true,
+               displayFormats: {
+                  week: "MMM D" }},
+            ticks: {
+               maxTicksLimit: isXAxisLog ? 12 : undefined,
+               fontColor,
+               callback: (value: any, index: number, values: any) => this.ticksCallback(value, index, values, false, isXAxisLog) }},
+         y: {
+            type: yAxisType,
+            min: yAxisMin,
+            max: yAxisMax,
+            suggestedMin: yAxisSuggestedMin,
+            suggestedMax: yAxisSuggestedMax,
+      //    scaleLabel: {
+      //       display: true,
+      //       labelString: "...",
+      //       fontColor },
+            ticks: {
+      //       beginAtZero: true,
+               maxTicksLimit: isYAxisLog ? 9 : 11,
+               fontColor,
+               callback: (value: any, index: number, values: any) => this.ticksCallback(value, index, values, true, isYAxisLog) }}};
+      const elementsOptions: ChartJs.ChartElementsOptions = {
+      // point: {
+      //    radius: 0 }
+         };
+      const legendOptions: ChartJs.ChartLegendOptions = {
+         display: false };
+      const tooltipOptions: ChartJs.ChartTooltipOptions = {
+         displayColors: false,
+         callbacks: {
+            title: (items: ChartJs.ChartTooltipItem[], data: ChartJs.ChartData) => this.tooltipTitleCallback(items, data),
+            label: (item: ChartJs.ChartTooltipItem, data: ChartJs.ChartData) => this.tooltipLabelCallback(item, data, isXy) }};
+      const options: ChartJs.ChartOptions = {
+      // animation: {duration: 0},
+         scales,
+         elements: elementsOptions,
+         legend: legendOptions,
+         tooltips: tooltipOptions,
+         responsive: false };
+      return {
+         type: "line",
+         data: { datasets },
+         options }; }
 
    private prepRelLogValues (a1: Float64Array) : Float64Array {
       const chartParms = this.chartParms;
@@ -251,16 +296,86 @@ class ChartController {
 
 //------------------------------------------------------------------------------
 
-export function createChart (canvas: HTMLCanvasElement, regionNdx: number, chartParms: ChartParms) {
-   destroyChart(regionNdx);
-   chartControllers[regionNdx] = new ChartController(canvas, regionNdx, chartParms); }
+function roundAxisLogMax (v: number | undefined) {
+   if (v == undefined || !isFinite(v) || v <= 0) {
+      return; }
+   const v2 = v * 1.1;
+   const v3 = 10 ** Math.ceil(Math.log10(v2));
+   const v4 = v3 / 2;
+   return (v4 >= v2) ? v4 : v3; }
+
+function prepareAllCharts (chartParms: ChartParms) {
+   for (let regionNdx = 0; regionNdx < regions; regionNdx++) {
+      const chartController = chartControllers[regionNdx];
+      if (!chartController) {
+         continue; }
+      chartController.prepare(chartParms); }}
+
+function completeAllCharts (xySync: XyMinMax) {
+   for (let regionNdx = 0; regionNdx < regions; regionNdx++) {
+      const chartController = chartControllers[regionNdx];
+      if (!chartController) {
+         continue; }
+      chartController.complete(xySync); }}
+
+function getOverallDataMinMax() : XyMinMax {
+   const mm = <XyMinMax>{};
+   for (let regionNdx = 0; regionNdx < regions; regionNdx++) {
+      const chartController = chartControllers[regionNdx];
+      if (!chartController) {
+         continue; }
+      const mm2 = chartController.dataMinMax;
+      mm.xMin = min(mm.xMin, mm2.xMin);
+      mm.xMax = max(mm.xMax, mm2.xMax);
+      mm.yMin = min(mm.yMin, mm2.yMin);
+      mm.yMax = max(mm.yMax, mm2.yMax); }
+   return mm;
+   function min (v1: number|undefined, v2: number|undefined) {
+      return (v1 == undefined) ? v2 : (v2 == undefined) ? v1 : Math.min(v1, v2); }
+   function max (v1: number|undefined, v2: number|undefined) {
+      return (v1 == undefined) ? v2 : (v2 == undefined) ? v1 : Math.max(v1, v2); }}
+
+function genXySync (chartParms: ChartParms) : XyMinMax {
+   if (activeCharts <= 1) {
+      return {}; }
+   const mm = getOverallDataMinMax();
+   const valAxisMin = (chartParms.scale == "log" && chartParms.absRel == "rel") ? 1E-5 : undefined;
+   switch (chartParms.mode) {
+      case "trend": {
+         const absMax = Math.max(Math.abs(mm.yMin ?? 0), Math.abs(mm.yMax ?? 0));
+         const maxTrend = Math.ceil(Math.max(1, absMax));
+         return {yMin: -maxTrend, yMax: maxTrend}; }
+      case "dailyAvgCum": {
+         return {xMin: valAxisMin, xMax: mm.xMax, yMin: valAxisMin, yMax: mm.yMax}; }
+      default: {
+         return {yMin: valAxisMin, yMax: mm.yMax}; }}}
+
+export function createChart (canvas: HTMLCanvasElement, regionNdx: number, chartParms: ChartParms, sync: boolean, updateAll: boolean) {
+   if (!chartControllers[regionNdx]) {
+      chartControllers[regionNdx] = new ChartController(canvas, regionNdx);
+      activeCharts++; }
+   if (updateAll) {
+      prepareAllCharts(chartParms); }
+    else {
+      chartControllers[regionNdx]!.prepare(chartParms); }
+   const xySync = sync ? genXySync(chartParms) : {};
+   if (updateAll) {
+      completeAllCharts(xySync); }
+    else {
+      chartControllers[regionNdx]!.complete(xySync); }}
+
+export function syncCharts (chartParms: ChartParms) {
+   prepareAllCharts(chartParms);
+   const xySync = genXySync(chartParms);
+   completeAllCharts(xySync); }
 
 export function destroyChart (regionNdx: number) {
    const chartController = chartControllers[regionNdx];
    if (!chartController) {
       return; }
    chartController.destroy();
-   chartControllers[regionNdx] = undefined; }
+   chartControllers[regionNdx] = undefined;
+   activeCharts--; }
 
 export function destroyAllCharts() {
    for (let regionNdx = 0; regionNdx < regions; regionNdx++) {

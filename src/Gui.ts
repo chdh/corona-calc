@@ -8,46 +8,62 @@ import {CalcParms, regionCalcTable} from "./Calc";
 import * as Selection from "./Selection";
 import {SelectionParms} from "./Selection";
 import * as Chart from "./Chart";
-import {ChartParms} from "./Chart";
 import * as DomUtils from "./utils/DomUtils";
 import {escapeHtml, formatNumber, formatPercent, formatDateIso, catchError} from "./utils/MiscUtils";
+
+interface ChartParmsExt extends Chart.ChartParms {
+   sync:                     boolean; }                    // true = synchronize all charts
 
 const regionChartCanvasWidth  = 870;
 const regionChartCanvasHeight = 300;
 
-let mruChartParms:           ChartParms | undefined;
+let mruChartParms:           ChartParmsExt | undefined;
 let currentSortOrder         = "deathsRelDesc";
 
-function getChartParms (parentElement: HTMLElement) : ChartParms {
+function getChartParms (parentElement: HTMLElement) : ChartParmsExt {
    return {
       source: get(".regionChartSource"),
       mode:   get(".regionChartMode"),
       absRel: get(".regionChartAbsRel"),
-      scale:  get(".regionChartScale") };
+      scale:  get(".regionChartScale"),
+      sync:   getChecked(".sync") };
    function get (sel: string) {
-      return (<HTMLSelectElement>parentElement.querySelector(sel))!.value; }}
+      return (<HTMLSelectElement>parentElement.querySelector(sel))!.value; }
+   function getChecked (sel: string) {
+      return (<HTMLInputElement>parentElement.querySelector(sel))!.checked; }}
 
-function setChartParms (parentElement: HTMLElement, parms: ChartParms) {
+function setChartParms (parentElement: Element, parms: ChartParmsExt) {
    set(".regionChartSource", parms.source);
    set(".regionChartMode",   parms.mode);
    set(".regionChartAbsRel", parms.absRel);
    set(".regionChartScale",  parms.scale);
+   setChecked(".sync",       parms.sync);
    const e1 = parms.mode != "trend";
    show(".regionChartScale", e1);
    function set (sel: string, value: string) {
       (<HTMLSelectElement>parentElement.querySelector(sel))!.value = value; }
+   function setChecked (sel: string, checked: boolean) {
+      (<HTMLInputElement>parentElement.querySelector(sel))!.checked = checked; }
    function show (sel: string, visible: boolean) {
       parentElement.querySelector(sel)!.classList.toggle("hidden", !visible); }}
 
-function createChart (regionTableEntryElement: HTMLElement, regionNdx: number, chartParms: ChartParms) {
-   setChartParms(regionTableEntryElement, chartParms);
+function setAllChartParms (parms: ChartParmsExt) {
+   for (const e of document.querySelectorAll(".regionChartBlock")) {
+      setChartParms(e, parms); }}
+
+function createChart (regionTableEntryElement: HTMLElement, regionNdx: number, chartParms: ChartParmsExt, updateAll: boolean) {
+   if (updateAll) {
+      setAllChartParms(chartParms); }
+    else {
+      setChartParms(regionTableEntryElement, chartParms); }
    const canvas = <HTMLCanvasElement>regionTableEntryElement.querySelector(".regionChart")!;
-   Chart.createChart(canvas, regionNdx, chartParms); }
+   Chart.createChart(canvas, regionNdx, chartParms, chartParms.sync, updateAll);
+   mruChartParms = chartParms; }
 
 function updateChart (regionTableEntryElement: HTMLElement, regionNdx: number) {
    const chartParms = getChartParms(regionTableEntryElement);
-   createChart(regionTableEntryElement, regionNdx, chartParms);
-   mruChartParms = chartParms; }
+   const updateAll = !mruChartParms || mruChartParms.sync || chartParms.sync;
+   createChart(regionTableEntryElement, regionNdx, chartParms, updateAll); }
 
 function openChart (regionTableEntryElement: HTMLElement, regionNdx: number) {
    const html = strip`
@@ -72,6 +88,8 @@ function openChart (regionTableEntryElement: HTMLElement, regionNdx: number) {
          <option value="lin">Linear</option>
          <option value="log">Logarithmic</option>
         </select>
+        <label for="sync_${regionNdx}">Sync:</label>
+        <input id="sync_${regionNdx}" class="sync" type="checkbox" checked>
        </div>
        <div class="regionChartContainer">
         <canvas class="regionChart" width="${regionChartCanvasWidth}" height="${regionChartCanvasHeight}" style="width:${regionChartCanvasWidth}px; height:${regionChartCanvasHeight}px"></canvas>
@@ -81,11 +99,13 @@ function openChart (regionTableEntryElement: HTMLElement, regionNdx: number) {
    const parmsElement = regionTableEntryElement.querySelector(".regionChartParms")!;
    parmsElement.addEventListener("change", () => catchError(updateChart, regionTableEntryElement, regionNdx));
    const chartParms = mruChartParms ? mruChartParms : getChartParms(regionTableEntryElement);
-   createChart(regionTableEntryElement, regionNdx, chartParms); }
+   createChart(regionTableEntryElement, regionNdx, chartParms, chartParms.sync); }
 
 function closeChart (regionTableEntryElement: HTMLElement, regionNdx: number) {
    regionTableEntryElement.querySelector(".regionChartBlock")!.remove();
-   Chart.destroyChart(regionNdx); }
+   Chart.destroyChart(regionNdx);
+   if (mruChartParms && mruChartParms.sync) {
+      Chart.syncCharts(mruChartParms); }}
 
 function switchSortOrder (newSortOrder: string) {
    if (newSortOrder == currentSortOrder) {
