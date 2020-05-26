@@ -3,12 +3,12 @@
    "dependencies": {
       "chart.js": "^3.0.0-alpha",
       "common-tags": "^1.8.0",
-      "moment": "^2.25.3"
+      "moment": "^2.26.0"
    },
    "devDependencies": {
-      "@types/chart.js": "^2.9.20",
+      "@types/chart.js": "^2.9.21",
       "@types/common-tags": "^1.8.0",
-      "rollup": "^2.8.2",
+      "rollup": "^2.10.9",
       "rollup-plugin-node-resolve": "^5.2.0"
    },
    "scripts": {

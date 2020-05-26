@@ -37,8 +37,8 @@ function buildRegionCalcRecord (regionNdx: number) : RegionCalcRecord {
    cr.deathsCleaned = dr.deaths ? cleanCumulativeTimeSeries(dr.deaths) : undefined;
    cr.casesTotal = dr.cases?.[days - 1];
    cr.deathsTotal = dr.deaths?.[days - 1];
-   cr.casesDaily = dr.cases ? getDerivative(dr.cases, days - 1, calcParms.dailyAvgDays) : undefined;
-   cr.deathsDaily = dr.deaths ? getDerivative(dr.deaths, days - 1, calcParms.dailyAvgDays) : undefined;
+   cr.casesDaily = cr.casesCleaned ? getDerivative(cr.casesCleaned, days - 1, calcParms.dailyAvgDays) : undefined;
+   cr.deathsDaily = cr.deathsCleaned ? getDerivative(cr.deathsCleaned, days - 1, calcParms.dailyAvgDays) : undefined;
    cr.casesTrend = cr.casesCleaned ? getTrend(cr.casesCleaned, days - 1, true) : undefined;
    cr.deathsTrend = cr.deathsCleaned ? getTrend(cr.deathsCleaned, days - 1, true) : undefined;
    const laggedCases = dr.cases?.[Math.max(0, days - 1 - calcParms.caseDeathTimeLag)];   // number of reported cases `caseDeathTimeLag` days before
