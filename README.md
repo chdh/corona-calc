@@ -2,4 +2,4 @@
 
 A web application that presents statistical data and charts about the Coronavirus pandemic.
 
-**Online demo**: [www.source-code.biz/coronaCalc](http://www.source-code.biz/coronaCalc)
+**Online demo**: [www.coronacalc.org](http://www.coronacalc.org)

@@ -18,7 +18,7 @@ const regionChartCanvasWidth  = 870;
 const regionChartCanvasHeight = 300;
 
 let mruChartParms:           ChartParmsExt | undefined;
-let currentSortOrder         = "deathsRelDesc";
+let currentSortOrder         = "deathsDailyDesc";
 
 function getChartParms (parentElement: HTMLElement) : ChartParmsExt {
    return {
