@@ -60,10 +60,13 @@ function cleanCumulativeTimeSeries (a: Float64Array) : Float64Array {
       if (d < 0) {                                         // ignore negative derivative
          offset -= d; }
        else if (v > 200 && d / v > 0.15 && i >= 10) {
-         const d2a = getDerivative(a2, i - 2, 5);
-         const d2b = getDerivative(a, i - 2, 5);
-         const d2Max = Math.max(d2a, d2b);
-         if (d / d2Max > 5) {
+         const d2a = getDerivative(a2, i - 2, 7);
+         const d2b = getDerivative(a, i - 2, 7);
+         let d2Max = Math.max(d2a, d2b);
+         if (i + 7 < n) {
+            const d2c = getDerivative(a, i + 7, 7);
+            d2Max = Math.max(d2Max, d2c); }
+         if (d / d2Max > 12) {
             offset -= d - d2Max; }}
       a2[i] = v + offset; }
    return a2; }
@@ -76,7 +79,7 @@ export function differentiate (a: Float64Array, w: number) : Float64Array {
    return a2; }
 
 function getDerivative (a: Float64Array, i: number, w: number) : number {
-   if (i <= 0) {
+   if (i <= 0 || i >= a.length) {
       return NaN; }
    const w2 = Math.min(w, i);
    return (a[i] - a[i - w2]) / w2; }
@@ -91,20 +94,19 @@ export function getTrendSeries (a1: Float64Array, relative: boolean) : Float64Ar
 // Calculates a trend value (second derivative, averaged over a window of `trendDays` days).
 // If `relative` is true, the returned value is in percent (relative to the previous daily value).
 function getTrend (a: Float64Array, i: number, relative: boolean) : number {
-   const minDailyForRelative = 5;
-   const relativeTrendLimit = 40;
+   const minDailyForRelative = 2.5;
+   const relativeTrendLimit = 29.5;
    if (i <= 2) {
       return NaN; }
    const w = Math.min(calcParms.trendDays, i - 1);
    const d1 = getDerivative(a, i - w, calcParms.dailyAvgDays);
    const d2 = getDerivative(a, i,     calcParms.dailyAvgDays);
-   const t = (d2 - d1) / w;                                // second derivative = absolute trend
    if (!relative) {
-      return t; }
-   const d3 = getDerivative(a, i - 1, calcParms.dailyAvgDays);
-   if (d3 < minDailyForRelative) {
+      return (d2 - d1) / w; }                              // second derivative = absolute trend
+   if (d1 < minDailyForRelative || d2 < minDailyForRelative) {
       return NaN; }
-   const r = t / d3 * 100;                                 // relative trend
+   const f = Math.exp(Math.log(d2 / d1) / w);
+   const r = (f - 1) * 100;
    if (Math.abs(r) >= relativeTrendLimit) {
       return NaN; }
    return r; }

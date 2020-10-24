@@ -164,7 +164,7 @@ async function loadTimeSeries() {
    processTimeSeriesData(usCasesText,      0, 1);
    processTimeSeriesData(usDeathsText,     1, 1); }
 
-// Some countries have no provinces have no totals.
+// Some countries with provinces have no totals.
 // Currently: Australia, Canada, China
 // See https://github.com/CSSEGISandData/COVID-19/issues/1743
 function generateMissingTimeSeries() {

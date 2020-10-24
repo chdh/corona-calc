@@ -18,7 +18,7 @@ const regionChartCanvasWidth  = 870;
 const regionChartCanvasHeight = 300;
 
 let mruChartParms:           ChartParmsExt | undefined;
-let currentSortOrder         = "deathsDailyDesc";
+let currentSortOrder         = "casesDailyDesc";
 
 function getChartParms (parentElement: HTMLElement) : ChartParmsExt {
    return {
@@ -79,7 +79,7 @@ function openChart (regionTableEntryElement: HTMLElement, regionNdx: number) {
        <div class="regionChartParms">
         <select class="regionChartSource">
          <option value="deaths">Deaths</option>
-         <option value="cases">Cases</option>
+         <option value="cases" selected>Cases</option>
          <option value="cfr">CFR</option>
         </select>
         <select class="regionChartMode">
