@@ -4,8 +4,7 @@
 'use strict';
 
 import moment from 'moment';
-// import { _adapters } from 'chart.js';
-const _adapters = window.Chart._adapters;
+import { _adapters } from 'chart.js';
 
 const FORMATS = {
         datetime: 'MMM D, YYYY, h:mm:ss a',

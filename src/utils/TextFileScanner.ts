@@ -162,6 +162,14 @@ export class Scanner {
          a[i] = this.scanNumberFieldReq(); }
       return a; }
 
+   public scanFloat64ArrayAndFillGaps (n: number) : Float64Array {
+      const a = new Float64Array(n);
+      let v = 0;
+      for (let i = 0; i < n; i++) {
+         v = this.scanNumberField(v);
+         a[i] = v; }
+      return a; }
+
    public genSyntaxError (msg: string) : Error {
       return new Error("Syntax error at line " + this.lineNo + " column " + (this.pos - this.lineStartPos + 1) + ": " + msg); }}
 

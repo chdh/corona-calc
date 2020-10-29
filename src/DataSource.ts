@@ -143,7 +143,7 @@ function processTimeSeriesData (text: string, kind1: number, kind2: number) {
             break; }
          default: {
             throw new Error("Unknown kind2."); }}
-      const a = scanner.scanFloat64Array(days);
+      const a = scanner.scanFloat64ArrayAndFillGaps(days);
       switch (kind1) {
          case 0: r.cases  = a; break;
          case 1: r.deaths = a; break; }}}

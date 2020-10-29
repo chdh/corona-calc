@@ -57,7 +57,10 @@ export function formatPercent (n: number | undefined, fractionDigits: number, in
 export function formatDateIso (d: Moment) : string {
    return d.format("YYYY-MM-DD"); }
 
-export async function catchError (f: Function, ...args: any[]) {
+export function catchError (f: Function, ...args: any[]) {
+   void catchErrorAsync(f, ...args); }
+
+async function catchErrorAsync(f: Function, ...args: any[]) {
    try {
       const r = f(...args);
       if (r instanceof Promise) {
