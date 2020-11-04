@@ -32,7 +32,7 @@ class ChartController {
    private dataPoints:       ChartJs.IPoint[];
    public  dataMinMax:       XyMinMax;
 
-   constructor (canvas: HTMLCanvasElement, regionNdx: number) {
+   public constructor (canvas: HTMLCanvasElement, regionNdx: number) {
       this.canvas = canvas;
       this.regionNdx = regionNdx;
       this.dataRecord = regionDataTable[this.regionNdx];

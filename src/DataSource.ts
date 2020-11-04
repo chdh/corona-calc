@@ -123,7 +123,10 @@ function processTimeSeriesData (text: string, kind1: number, kind2: number) {
             const provinceOrState = scanner.scanStringFieldOpt();
             if (provinceOrState == "Recovered") {
                return; }                                   // ignore "Recovered" entries
-            const countryOrRegion = scanner.scanStringFieldReq();
+            const countryOrRegion = scanner.scanStringFieldOpt();
+            if (!countryOrRegion) {
+               console.log(`Missing Country or region field in global time series at line ${scanner.lineNo}.`);
+               return; }
             r = regionDataTableIndex1.get(countryOrRegion + "|" + (provinceOrState ?? ""));
             if (!r) {
                console.log(`Region not found for global time series (countryOrRegion="${countryOrRegion}", provinceOrState="${provinceOrState ?? ""}").`);

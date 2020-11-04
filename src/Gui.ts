@@ -115,7 +115,7 @@ function openChart (regionTableEntryElement: HTMLElement, regionNdx: number) {
 function closeChart (regionTableEntryElement: HTMLElement, regionNdx: number) {
    regionTableEntryElement.querySelector(".regionChartBlock")!.remove();
    Chart.destroyChart(regionNdx);
-   if (mruChartParms && mruChartParms.sync) {
+   if (mruChartParms?.sync) {
       Chart.syncCharts(mruChartParms); }}
 
 function switchSortOrder (newSortOrder: string) {

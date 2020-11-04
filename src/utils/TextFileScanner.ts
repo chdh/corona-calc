@@ -9,7 +9,7 @@ export class Scanner {
    public  lineNo:           number;                       // current line number
    private lineStartPos:     number;                       // start position of current line
 
-   constructor (text: string, fieldSeparator: string) {
+   public constructor (text: string, fieldSeparator: string) {
       this.text = text;
       this.fieldSeparator = fieldSeparator;
       this.fieldSepCharCode = fieldSeparator.charCodeAt(0);
