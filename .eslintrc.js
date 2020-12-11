@@ -74,14 +74,15 @@ const rules = {
    "@typescript-eslint/restrict-template-expressions": "off",
    "no-var": "off",                                     // @typescript-eslint/recommended switches this on
 
-   // Unicorn plugin rules:
-   "unicorn/filename-case": ["error", {case: "pascalCase"}],
+   // Filenames plugin rules:
+   "filenames/match-regex": ["error", "^[A-Z]" ]
    };
 
 module.exports = {
    plugins: [
       "@typescript-eslint",
-      "eslint-plugin-unicorn" ],
+      "filenames"
+    ],
    parser: "@typescript-eslint/parser",
    parserOptions: {
       project: "./tsconfig.json",

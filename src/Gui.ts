@@ -129,8 +129,9 @@ function setOpenCloseButtonSymbol (buttonElement: HTMLElement, isOpen: boolean) 
    buttonElement.classList.toggle("minusSymbol", isOpen); }
 
 function openCloseButton_click (event: MouseEvent) {
-   const buttonElement = <HTMLElement>event.target!;
-   const regionTableEntryElement = <HTMLElement>buttonElement.closest(".regionTableEntry")!;
+   const clickedElement = <HTMLElement>event.target!;
+   const regionTableEntryElement = <HTMLElement>clickedElement.closest(".regionTableEntry")!;
+   const buttonElement = <HTMLElement>regionTableEntryElement.querySelector(".openCloseButton")!;
    const regionNdx = Number(regionTableEntryElement.dataset.regionNdx);
    const isOpen = buttonElement.classList.contains("minusSymbol");
    if (isOpen) {
@@ -175,7 +176,9 @@ function renderRegionTable (selection: number[], sortOrder: string) {
       const casesDailyRel = (cr.casesDaily ?? NaN) / (dr.population ?? NaN);
       html += strip`
          <div class="regionTableEntry" data-region-ndx="${regionNdx}">
-          <div class="openCloseButton"></div>
+          <div class="openCloseButtonClickArea">
+           <div class="openCloseButton"></div>
+          </div>
           <div class="regionDataBlock">
            <div class="w200">${escapeHtml(dr.combinedName)}</div>
            <div class="w100r">${formatNumber(dr.population)}</div>
@@ -193,9 +196,13 @@ function renderRegionTable (selection: number[], sortOrder: string) {
    document.getElementById("regionTable")!.innerHTML = html;
    for (const e of <NodeListOf<HTMLElement>>document.querySelectorAll(".orderClick")) {
       e.addEventListener("click", () => catchError(switchSortOrder, e.dataset.sortOrder)); }
-   for (const buttonElement of <NodeListOf<HTMLElement>>document.querySelectorAll(".openCloseButton")) {
-      buttonElement.addEventListener("click", (event: MouseEvent) => catchError(openCloseButton_click, event));
-      setOpenCloseButtonSymbol(buttonElement, false); }}
+   for (const regionTableEntryElement of <NodeListOf<HTMLElement>>document.querySelectorAll(".regionTableEntry")) {
+      const buttonClickAreaElement = <HTMLElement>regionTableEntryElement.querySelector(".openCloseButtonClickArea")!;
+      const buttonElement = <HTMLElement>regionTableEntryElement.querySelector(".openCloseButton")!;
+      const regionDataBlockElement = <HTMLElement>regionTableEntryElement.querySelector(".regionDataBlock")!;
+      setOpenCloseButtonSymbol(buttonElement, false);
+      buttonClickAreaElement.addEventListener("click", (event: MouseEvent) => catchError(openCloseButton_click, event));
+      regionDataBlockElement.addEventListener("click", (event: MouseEvent) => catchError(openCloseButton_click, event)); }}
 
 function trendLevel (v: number | undefined) {
    return (
