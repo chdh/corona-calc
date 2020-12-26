@@ -81,8 +81,7 @@ const rules = {
 module.exports = {
    plugins: [
       "@typescript-eslint",
-      "filenames"
-    ],
+      "filenames" ],
    parser: "@typescript-eslint/parser",
    parserOptions: {
       project: "./tsconfig.json",

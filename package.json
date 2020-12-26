@@ -6,7 +6,7 @@
       "moment": "^2.29.1"
    },
    "devDependencies": {
-      "@rollup/plugin-node-resolve": "^10.0.0",
+      "@rollup/plugin-node-resolve": "^11.0.1",
       "@types/common-tags": "^1.8.0",
       "rollup": "^2.32.1"
    },

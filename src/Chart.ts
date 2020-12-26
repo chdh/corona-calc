@@ -29,7 +29,7 @@ class ChartController {
    private calcRecord:       RegionCalcRecord;
    private chartParms:       ChartParms;
    private chart?:           ChartJs.Chart;
-   private dataPoints:       ChartJs.IPoint[];
+   private dataPoints:       ChartJs.Point[];
    public  dataMinMax:       XyMinMax;
 
    public constructor (canvas: HTMLCanvasElement, regionNdx: number) {
@@ -62,17 +62,17 @@ class ChartController {
 
    //--- Data points -----------------------------------------------------------
 
-   private genChartDataPoints() : ChartJs.IPoint[] {
+   private genChartDataPoints() : ChartJs.Point[] {
       const chartParms = this.chartParms;
       if (chartParms.mode == "dailyAvgCum" && chartParms.source != "cfr") {
          return this.genXyChartDataPoints(); }
        else {
          return this.genTimeChartDataPoints(); }}
 
-   private genTimeChartDataPoints() : ChartJs.IPoint[] {
+   private genTimeChartDataPoints() : ChartJs.Point[] {
       const day = firstDay.clone();
       const yVals = this.prepTimeSeriesValues(this.chartParms.mode);
-      const points: ChartJs.IPoint[] = Array(days);
+      const points: ChartJs.Point[] = Array(days);
       for (let i = 0; i < days; i++) {
          points[i] = {
             x: <any>day.clone(),                           // TODO: Remove <any> then chart.js 3 is corrected
@@ -80,11 +80,11 @@ class ChartController {
          day.add(1, "d"); }
       return points; }
 
-   private genXyChartDataPoints() : ChartJs.IPoint[] {
+   private genXyChartDataPoints() : ChartJs.Point[] {
       const yAxisMode = (this.chartParms.mode == "dailyAvgCum") ? "dailyAvg" : "daily";
       const xVals = this.prepTimeSeriesValues("cumulative");
       const yVals = this.prepTimeSeriesValues(yAxisMode);
-      const points: ChartJs.IPoint[] = Array(days);
+      const points: ChartJs.Point[] = Array(days);
       for (let i = 0; i < days; i++) {
          points[i] = {
             x: xVals[i],
@@ -115,7 +115,7 @@ class ChartController {
          default:         vals = sourceVals; }
       return this.prepRelLogValues(vals); }
 
-   private findDataPointsMinMax (dataPoints: ChartJs.IPoint[]) : XyMinMax {
+   private findDataPointsMinMax (dataPoints: ChartJs.Point[]) : XyMinMax {
       const mm = <XyMinMax>{};
       for (const p of dataPoints) {
          mm.xMin = min(mm.xMin, p.x);
@@ -134,21 +134,22 @@ class ChartController {
 
    //---------------------------------------------------------------------------
 
-   private createChartConfig (xySync: XyMinMax) : ChartJs.IChartConfiguration {
+   private createChartConfig (xySync: XyMinMax) : ChartJs.ChartConfiguration {
       const chartParms = this.chartParms;
       const isCfr = chartParms.source == "cfr";
       const isTrend = !isCfr && chartParms.mode == "trend";
       const isXy = !isCfr && chartParms.mode == "dailyAvgCum";
       const fontColor = "#000";
       const dateFormat = "YYYY-MM-DD";
-      const yDataSet: /* ChartJs.IChartDataset<"line"> */ any = {            // TODO: remove "any" when ChartJs 3 is ready
+      const yDataSet: Partial<ChartJs.ChartDataset<"line">> = {
          borderColor:     isCfr ? "rgb(247,213,0)" : (chartParms.source == "deaths") ? "#FF6B5F" : "#0066FF",
          backgroundColor: isCfr ? "rgba(247,213,0,0.15)" : isTrend ? "rgba(0,0,0,0.15)" : (chartParms.source == "deaths") ? "#FDDED6" : "#D8E7FE",
-         lineTension: 0, tension: 0,  // ?
+         fill: "origin",
+         tension: 0,
          borderJoinStyle: "round",
          parsing: false,
          data: this.dataPoints };
-      const datasets: ChartJs.IChartDataset[] = [yDataSet];
+      const datasets: Partial<ChartJs.ChartDataset<"line">>[] = [yDataSet];
       const isXAxisLog = isXy && chartParms.scale == "log";
       const isYAxisLog = !isTrend && !isCfr && chartParms.scale == "log";
       const valAxisType = (!isTrend && !isCfr && chartParms.scale == "log") ? "logarithmic" : "linear";
@@ -169,61 +170,48 @@ class ChartController {
       const yAxisSuggestedMin = xySync.yMin ?? (isTrend ? -yMaxTrend : undefined);
       const yAxisSuggestedMax = xySync.yMax ?? (isTrend ? yMaxTrend : undefined);
          // Note: yAxisSuggestedMax seems to have no effect for log axes.
-      const scales: any /* ChartJs.IScaleOptions ??? */ = {
-         x: {
-            type: xAxisType,
-            min: xAxisMin,
-            max: xAxisMax,
-            suggestedMin: xAxisSuggestedMin,
-            suggestedMax: xAxisSuggestedMax,
-            time: {
-               parser: dateFormat,
-               unit: "week",
-               isoWeekday: true,
-               displayFormats: {
-                  week: "MMM D" }},
-            ticks: {
-               maxTicksLimit: isXAxisLog ? 12 : undefined,
-               fontColor,
-               callback: (value: any, index: number, values: any) => this.ticksCallback(value, index, values, false, isXAxisLog) }},
-         y: {
-            type: yAxisType,
-            min: yAxisMin,
-            max: yAxisMax,
-            suggestedMin: yAxisSuggestedMin,
-            suggestedMax: yAxisSuggestedMax,
-      //    scaleLabel: {
-      //       display: true,
-      //       labelString: "...",
-      //       fontColor },
-            ticks: {
-      //       beginAtZero: true,
-               maxTicksLimit: isYAxisLog ? 9 : 11,
-               font: {
-                  color: fontColor},
-               callback: (value: any, index: number, values: any) => this.ticksCallback(value, index, values, true, isYAxisLog) }}};
-      const elementsOptions: ChartJs.IElementOptions = {
-      // point: {
-      //    radius: 0 }
-         };
-      const legendOptions: Partial<ChartJs.ILegendOptions> = {
-         display: false };
-      const tooltipCallbacks: Partial<ChartJs.ITooltipCallbacks> = {
-            title: (items: ChartJs.ITooltipItem[]) => this.tooltipTitleCallback(items),
-            label: (item: ChartJs.ITooltipItem) => this.tooltipLabelCallback(item, isXy) };
-      const tooltipOptions: Partial<ChartJs.ITooltipOptions> = {
+      const xScale: any /* ChartJs.ScaleOptions<"linear"> | ChartJs.ScaleOptions<"logarithmic"> | ChartJs.ScaleOptions<"time"> */ = {  // TODO: Remove <any> after Chart.js v3.0.0-beta.7
+         type: <any>xAxisType,
+         min: <any>xAxisMin,
+         max: <any>xAxisMax,
+         suggestedMin: xAxisSuggestedMin,
+         suggestedMax: xAxisSuggestedMax,
+         time: {
+            parser: dateFormat,
+            unit: "week",
+            isoWeekday: 1,
+            displayFormats: {
+               week: "MMM D" }},
+         ticks: {
+            maxTicksLimit: <any>(isXAxisLog ? 12 : undefined),
+            color: fontColor,
+            callback: (value: any, index: number, values: any) => this.ticksCallback(value, index, values, false, isXAxisLog) }};
+      const yScale: any /* ChartJs.ScaleOptions<"linear"> | ChartJs.ScaleOptions<"logarithmic"> */ = { // TODO: Remove <any> after Chart.js v3.0.0-beta.7
+         type: <any>yAxisType,
+         min: yAxisMin,
+         max: yAxisMax,
+         suggestedMin: yAxisSuggestedMin,
+         suggestedMax: yAxisSuggestedMax,
+         ticks: {
+            maxTicksLimit: isYAxisLog ? 9 : 11,
+            color: fontColor,
+            callback: (value: any, index: number, values: any) => this.ticksCallback(value, index, values, true, isYAxisLog) }};
+      const scales = {x: xScale, y: yScale};
+      const tooltipCallbacks: Partial<ChartJs.TooltipCallbacks> = {
+            title: (items: ChartJs.TooltipItem[]) => this.tooltipTitleCallback(items),
+            label: (item: ChartJs.TooltipItem) => this.tooltipLabelCallback(item, isXy) };
+      const tooltipOptions: Partial<ChartJs.TooltipOptions> = {
          displayColors: false,
-         callbacks: <ChartJs.ITooltipCallbacks>tooltipCallbacks };
-      const options: ChartJs.IChartOptions<"line"> = {
-      // animation: {duration: 0},
+         callbacks: <ChartJs.TooltipCallbacks>tooltipCallbacks };
+      const pluginOptions: Partial<ChartJs.PluginOptions> = {
+         tooltip: <ChartJs.TooltipOptions>tooltipOptions };
+      const options: ChartJs.ChartOptions<"line"> = {
          scales,
-         elements: elementsOptions,
-         legend: legendOptions,
-         tooltips: tooltipOptions,
+         plugins: pluginOptions,
          responsive: false };
       return {
          type: "line",
-         data: <ChartJs.IChartData>{ datasets },
+         data: <ChartJs.ChartData>{ datasets },
          options }; }
 
    private prepRelLogValues (a1: Float64Array) : Float64Array {
@@ -246,10 +234,7 @@ class ChartController {
       let unit: number;
       if (isLog) {
          // For log axis, we ignore the lowest value (valueAxisMin), because it's not a regularly distributed value.
-         if (isYAxis) {
-            unit = values[values.length - 3].value - values[values.length - 2].value; }
-          else {
-            unit = values[2].value - values[1].value; }}
+         unit = values[2].value - values[1].value; }
        else {
          unit = Math.abs(values[0].value - values[values.length - 1].value) / (values.length - 1); }
       return this.formatLabel(value, isYAxis, false, unit); }
@@ -296,13 +281,13 @@ class ChartController {
          (daily ? " per day" : "") +
          (avg ? ` (average over the previous ${avgDays} days)` : ""); }
 
-   private tooltipTitleCallback (items: ChartJs.ITooltipItem[]) : string | string[] {
+   private tooltipTitleCallback (items: ChartJs.TooltipItem[]) : string | string[] {
       const p = items[0].dataIndex;
       const d = firstDay.clone().add(p, "d");
       return d.format("MMM D, YYYY"); }
 
-   private tooltipLabelCallback (item: ChartJs.ITooltipItem, isXy: boolean) : string | string[] {
-      // const point = <ChartJs.IPoint>data.datasets![item.datasetIndex!].data![item.index!];
+   private tooltipLabelCallback (item: ChartJs.TooltipItem, isXy: boolean) : string | string[] {
+      // const point = <ChartJs.Point>data.datasets![item.datasetIndex!].data![item.index!];
       // const point = item.dataset.data[item.dataIndex];
       const point = this.dataPoints[item.dataIndex];
       if (isXy) {
@@ -402,5 +387,5 @@ export function destroyAllCharts() {
       destroyChart(regionNdx); }}
 
 export function init() {
-   ChartJs.Chart.register(ChartJs.LineController, ChartJs.Line, ChartJs.LinearScale, ChartJs.LogarithmicScale, ChartJs.TimeScale, ChartJs.Title, ChartJs.Point, ChartJs.Tooltip, ChartJs.Filler);
+   ChartJs.Chart.register(ChartJs.LineController, ChartJs.LineElement, ChartJs.LinearScale, ChartJs.LogarithmicScale, ChartJs.TimeScale, ChartJs.Title, ChartJs.PointElement, ChartJs.Tooltip, ChartJs.Filler);
    chartControllers = Array(regions); }
