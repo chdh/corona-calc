@@ -4,6 +4,7 @@ import {regionDataTable} from "./DataSource";
 import {regionCalcTable} from "./Calc";
 
 export interface SelectionParms {
+   continent?:               string;
    minPopulation?:           number;
    minDeaths?:               number;
    countriesOnly:            boolean;
@@ -15,6 +16,8 @@ export function createSelection (selParms: SelectionParms) : number[] {
    for (let regionNdx = 0; regionNdx < regionDataTable.length; regionNdx++) {
       const dr = regionDataTable[regionNdx];
       const cr = regionCalcTable[regionNdx];
+      if (selParms.continent && selParms.continent != dr.continent) {
+         continue; }
       if (selParms.minPopulation && selParms.minPopulation > (dr.population ?? -1)) {
          continue; }
       if (selParms.minDeaths && selParms.minDeaths > (cr.deathsTotal ?? -1)) {

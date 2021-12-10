@@ -14,10 +14,9 @@ import {escapeHtml, formatNumber, formatPercent, formatDateIso, catchError} from
 interface ChartParmsExt extends Chart.ChartParms {
    sync:                     boolean; }                    // true = synchronize all charts
 
-const regionChartCanvasWidth  = 870;
-const regionChartCanvasHeight = 300;
-
 let mruChartParms:           ChartParmsExt | undefined;
+let mruChartWidth            = 0;
+let mruChartHeight           = 0;
 let currentSortOrder         = "deathsDailyDesc";
 
 function getChartParms (parentElement: HTMLElement) : ChartParmsExt {
@@ -103,14 +102,26 @@ function openChart (regionTableEntryElement: HTMLElement, regionNdx: number) {
         <input id="sync_${regionNdx}" class="sync" type="checkbox" checked>
        </div>
        <div class="regionChartContainer">
-        <canvas class="regionChart" width="${regionChartCanvasWidth}" height="${regionChartCanvasHeight}" style="width:${regionChartCanvasWidth}px; height:${regionChartCanvasHeight}px"></canvas>
+        <canvas class="regionChart"></canvas>
        </div>
       </div>`;
    regionTableEntryElement.insertAdjacentHTML("beforeend", html);
+   const chartContainerElement = <HTMLDivElement>regionTableEntryElement.querySelector(".regionChartContainer")!;
+   if (mruChartWidth > 0 && mruChartWidth < document.body.clientWidth - 40) {
+      chartContainerElement.style.width = mruChartWidth + "px";
+      chartContainerElement.style.height = mruChartHeight + "px"; }
+   const chartResizeObserver = new ResizeObserver(chartResizeObserverCallback);
+   chartResizeObserver.observe(chartContainerElement);
    const parmsElement = regionTableEntryElement.querySelector(".regionChartParms")!;
    parmsElement.addEventListener("change", () => catchError(updateChart, regionTableEntryElement, regionNdx));
    const chartParms = mruChartParms ? mruChartParms : getChartParms(regionTableEntryElement);
    createChart(regionTableEntryElement, regionNdx, chartParms, chartParms.sync); }
+
+function chartResizeObserverCallback (entries: ResizeObserverEntry[]) {
+   const r = entries[0].contentRect;
+   if (r.width > 0 && r.height > 0) {
+      mruChartWidth = r.width;
+      mruChartHeight = r.height; }}
 
 function closeChart (regionTableEntryElement: HTMLElement, regionNdx: number) {
    regionTableEntryElement.querySelector(".regionChartBlock")!.remove();
@@ -220,6 +231,7 @@ function dailyLevel (v: number | undefined, treshold: number) {
 
 function getSelectionParms() : SelectionParms {
    const selParms = <SelectionParms>{};
+   selParms.continent     = DomUtils.getValue("continent");
    selParms.minPopulation = DomUtils.getValueNumOpt("minPopulation");
    selParms.minDeaths     = DomUtils.getValueNumOpt("minDeaths");
    selParms.countriesOnly = DomUtils.getChecked("countriesOnly");
@@ -249,7 +261,7 @@ function inputParms_keyDown (event: KeyboardEvent) {
 
 export function init() {
    DomUtils.setValueNum("minPopulation", 1000000);
-   DomUtils.setValueNum("minDeaths", 1000);
+   DomUtils.setValueNum("minDeaths", 3000);
    DomUtils.addNumericFieldFormatSwitcher("minPopulation");
    DomUtils.addNumericFieldFormatSwitcher("minDeaths");
    genRegionTable();

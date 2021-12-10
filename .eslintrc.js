@@ -38,7 +38,7 @@ const rules = {
    "prefer-const": "error",
    "prefer-promise-reject-errors": "error",
    "require-atomic-updates": "error",
-   "require-await": "warn",
+
    // Modifications of default rules:
    "no-constant-condition": ["error", {checkLoops: false }],
 
@@ -59,8 +59,10 @@ const rules = {
    "@typescript-eslint/prefer-includes": "warn",
    "@typescript-eslint/prefer-nullish-coalescing": "warn",
    "@typescript-eslint/prefer-optional-chain": "warn",
+   "@typescript-eslint/require-await": "error",                                      "require-await": "off",
    "@typescript-eslint/semi": "error",                                               "semi": "off",
    "@typescript-eslint/switch-exhaustiveness-check": "error",
+
    // Modifications of default rules:
    "@typescript-eslint/ban-types": ["error", {extendDefaults: true, types: {Function: false}}],
    "@typescript-eslint/explicit-module-boundary-types": "off",
@@ -68,20 +70,21 @@ const rules = {
    "@typescript-eslint/no-inferrable-types": "off",
    "@typescript-eslint/no-non-null-assertion": "off",
    "@typescript-eslint/no-unnecessary-type-assertion": "off", // off because it does not work correctly
+   "@typescript-eslint/no-unsafe-argument": "off",
    "@typescript-eslint/no-unsafe-assignment": "off",
    "@typescript-eslint/no-unsafe-member-access": "off",
    "@typescript-eslint/restrict-plus-operands": "off",
    "@typescript-eslint/restrict-template-expressions": "off",
    "no-var": "off",                                     // @typescript-eslint/recommended switches this on
 
-   // Filenames plugin rules:
-   "filenames/match-regex": ["error", "^[A-Z]" ]
+   // Filename-rules plugin rules:
+   "filename-rules/match": ["error", /^[A-Z]/ ]
    };
 
 module.exports = {
    plugins: [
       "@typescript-eslint",
-      "filenames" ],
+      "filename-rules" ],
    parser: "@typescript-eslint/parser",
    parserOptions: {
       project: "./tsconfig.json",

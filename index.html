@@ -29,10 +29,20 @@
  </div>
  <div class="parmHeading2">Filter</div>
  <div class="parmLine">
-  <label class="w120" for="minPopulation" title="Minumum population per region.">Min. population:</label>
+  <label class="w120" for="continent">Continent:</label>
+  <select class="w110" id="continent">
+   <option value=""></option>
+   <option value="AF">Africa</option>
+   <option value="AS">Asia</option>
+   <option value="AU">Australia</option>
+   <option value="EU">Europe</option>
+   <option value="NA">North America</option>
+   <option value="SA">South America</option>
+  </select>
+  <label class="w120g" for="minPopulation" title="Minumum population per region.">Min. population:</label>
   <input class="w110" id="minPopulation" type="text">
   <label class="w120g" for="minDeaths" title="Minimum number of reported deaths per region.">Min. deaths:</label>
-  <input class="w110" id="minDeaths" type="text" value="1000">
+  <input class="w110" id="minDeaths" type="text">
   <label class="w120g" for="countriesOnly" title="Only show countries.">Countries only:</label>
   <input id="countriesOnly" type="checkbox" checked>
  </div>

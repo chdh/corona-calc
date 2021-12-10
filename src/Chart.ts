@@ -4,7 +4,7 @@ import {calcParms, regionCalcTable, RegionCalcRecord} from "./Calc";
 import * as Calc from "./Calc";
 import * as ChartJs from "chart.js";
 import moment from "moment";
-import "./tempExtSource/chartjs-adapter-moment.js";        // imported for side-effects only
+import "chartjs-adapter-moment";                           // imported for side-effects only
 
 export interface ChartParms {                              // chart parameters
    source:                   string;                       // "deaths", "cases", "cfr"
@@ -197,18 +197,19 @@ class ChartController {
             color: fontColor,
             callback: (value: any, index: number, values: any) => this.ticksCallback(value, index, values, true, isYAxisLog) }};
       const scales = {x: xScale, y: yScale};
-      const tooltipCallbacks: Partial<ChartJs.TooltipCallbacks> = {
-            title: (items: ChartJs.TooltipItem[]) => this.tooltipTitleCallback(items),
-            label: (item: ChartJs.TooltipItem) => this.tooltipLabelCallback(item, isXy) };
+      const tooltipCallbacks: Partial<ChartJs.TooltipCallbacks<"line">> = {
+            title: (items: ChartJs.TooltipItem<"line">[]) => this.tooltipTitleCallback(items),
+            label: (item: ChartJs.TooltipItem<"line">) => this.tooltipLabelCallback(item, isXy) };
       const tooltipOptions: Partial<ChartJs.TooltipOptions> = {
          displayColors: false,
-         callbacks: <ChartJs.TooltipCallbacks>tooltipCallbacks };
-      const pluginOptions: Partial<ChartJs.PluginOptions> = {
+         callbacks: <ChartJs.TooltipCallbacks<"line">>tooltipCallbacks };
+      const pluginOptions: Partial<ChartJs.PluginOptionsByType<"line">> = {
          tooltip: <ChartJs.TooltipOptions>tooltipOptions };
       const options: ChartJs.ChartOptions<"line"> = {
          scales,
          plugins: pluginOptions,
-         responsive: false };
+         responsive: true,
+         maintainAspectRatio: false };
       return {
          type: "line",
          data: <ChartJs.ChartData>{ datasets },
@@ -239,7 +240,7 @@ class ChartController {
          unit = Math.abs(values[0].value - values[values.length - 1].value) / (values.length - 1); }
       return this.formatLabel(value, isYAxis, false, unit); }
 
-   private formatLabel (value: any, isYAxis: boolean, extendedFormat: boolean, unit?: any) : string {
+   private formatLabel (value: any, isYAxis: boolean, extendedFormat: boolean, unit?: number) : string {
       const chartParms = this.chartParms;
       const isCfr = chartParms.source == "cfr";
       const isTrend = !isCfr && chartParms.mode == "trend";
@@ -281,12 +282,12 @@ class ChartController {
          (daily ? " per day" : "") +
          (avg ? ` (average over the previous ${avgDays} days)` : ""); }
 
-   private tooltipTitleCallback (items: ChartJs.TooltipItem[]) : string | string[] {
+   private tooltipTitleCallback (items: ChartJs.TooltipItem<"line">[]) : string | string[] {
       const p = items[0].dataIndex;
       const d = firstDay.clone().add(p, "d");
       return d.format("MMM D, YYYY"); }
 
-   private tooltipLabelCallback (item: ChartJs.TooltipItem, isXy: boolean) : string | string[] {
+   private tooltipLabelCallback (item: ChartJs.TooltipItem<"line">, isXy: boolean) : string | string[] {
       // const point = <ChartJs.Point>data.datasets![item.datasetIndex!].data![item.index!];
       // const point = item.dataset.data[item.dataIndex];
       const point = this.dataPoints[item.dataIndex];

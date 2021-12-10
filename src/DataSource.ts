@@ -24,6 +24,7 @@ export interface RegionDataRecord {
    combinedName:             string;                       // "Combined_Key": Combination of provice/state and country/region
    population?:              number;                       // "Population": pupulation size
    isCountry:                boolean;                      // true if this entry is for a country
+   continent?:               string;                       // continent code
    cases?:                   Float64Array;                 // reported cases time series
    deaths?:                  Float64Array; }               // reported deaths time series
 
@@ -57,6 +58,7 @@ async function loadRegionDataTable() {
       regionDataTable.push(r);
       regionDataTableIndex1.set(r.countryOrRegion + "|" + (r.provinceOrState ?? ""), r);
       regionDataTableIndex2.set(r.uid, r); }
+   // dumpContinent("EU");
 
    function parseLine() : RegionDataRecord | undefined {
       scanner.skipBlanks();
@@ -75,8 +77,41 @@ async function loadRegionDataTable() {
       r.longitude       = scanner.scanNumberFieldOpt();
       r.combinedName    = scanner.scanStringFieldReq();
       r.population      = scanner.scanNumberFieldOpt();
+      r.continent       = getContinentFromCoordinates(r.latitude, r.longitude);
       r.isCountry       = !!r.countryCode2 && !r.provinceOrState;
       return r; }}
+
+function getContinentFromCoordinates (lat?: number, lon?: number) : string|undefined {
+   if (lat === undefined || lon === undefined) {
+      return undefined; }
+   if (lat >= 35 && lon >= -20 && lon <= 33.5 ||           // Cyprus 35.1264 33.4299
+       lat >= 42 && lon >= -20 && lon <= 44) {             // Georgia: 42.3154 43.3569
+      return "EU"; }
+   if (lat < 34   && lon >= -25 && lon <= 10   ||          // Tunisia: 33.886917 9.537499
+       lat < 31   && lon >= -25 && lon <= 35.2 ||          // not: Israel: 31.046051 34.851612
+       lat < 23.5 && lon >= -25 && lon <= 46.2 ) {
+      return "AF"; }
+   if (lat <= 0 && lon >= 133 ||                           // Australia: -25 133, Papua New Guinea: -6.314993 143.95555   not: Indonesia: -0.7893 113.9213
+       lat <= 30 && lon <= -140) {                         // Hawaii: 21.0943 -157.4983
+      return "AU"; }
+   if (lon >= 34.8) {                                      // Israel: lon=34.851612
+      return "AS"; }
+   if (lat >= 8 && lon < -40) {                            // Greenland: lon=-42.6043, Panama: lat=8.538
+      return "NA"; }
+   if (lat < 8 && lon < -40) {
+      return "SA"; }
+   return undefined; }
+
+/*
+function dumpContinent (continent: string|undefined) {
+   console.log("Continent " + continent + ":");
+   for (const r of regionDataTable) {
+      if (!r.isCountry) {
+         continue; }
+      if (r.continent != continent) {
+         continue; }
+      console.log(r.combinedName, r.latitude, r.longitude); }}
+*/
 
 function decodeTimeSeriesDate (s: string) : Moment {
    const d = moment.utc(s, ["M/D/YY", "M/D/YYYY"], true);

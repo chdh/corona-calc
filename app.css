@@ -123,7 +123,7 @@ div.actionButtons button {
 
 #regionTable {
    margin-top: 15px;
-   width: 882px; }
+   min-width: 882px; }
 
 .regionTableHeader {
    display: flex;
@@ -223,15 +223,15 @@ div.actionButtons button {
    font-size: 14px; }
 
 div.regionChartContainer {
+   box-sizing: content-box;   /* so that width/height match ResizeObserver.contentRect */
    border: 1px solid #aaa;
-   padding-top: 8px;
-   padding-left: 5px;
    margin-top: 5px;
    margin-bottom: 10px;
-   width: 882px;
-   height: 315px; }
+   padding: 5px;
+   height: 300px;
+   resize: both;
+   overflow: hidden; }
 canvas.regionChart {
-   /* width and height is specified in the source code */
    display: block;
    outline: none;
    touch-action: none; }
