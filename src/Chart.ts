@@ -139,6 +139,8 @@ class ChartController {
       const isCfr = chartParms.source == "cfr";
       const isTrend = !isCfr && chartParms.mode == "trend";
       const isXy = !isCfr && chartParms.mode == "dailyAvgCum";
+      const isRelative = chartParms.absRel == "rel";
+      const isRelTrend = isTrend && isRelative;
       const fontColor = "#000";
       const dateFormat = "YYYY-MM-DD";
       const yDataSet: Partial<ChartJs.ChartDataset<"line">> = {
@@ -165,10 +167,11 @@ class ChartController {
       const xAxisSuggestedMax = xySync.xMax;
       const yAbsMax = Math.max(Math.abs(this.dataMinMax.yMin ?? 0), Math.abs(this.dataMinMax.yMax ?? 0));
       const yMaxTrend = Math.ceil(Math.max(1, yAbsMax));
-      const yAxisMin = isTrend ? undefined : valAxisMin;
-      const yAxisMax = isYAxisLog ? roundAxisLogMax(xySync.yMax) : undefined;
+      const fixedMaxRelTrend = 20;
+      const yAxisMin = isRelTrend ? -fixedMaxRelTrend : isTrend ? undefined : valAxisMin;
+      const yAxisMax = isRelTrend ?  fixedMaxRelTrend : isYAxisLog ? roundAxisLogMax(xySync.yMax) : undefined;
       const yAxisSuggestedMin = xySync.yMin ?? (isTrend ? -yMaxTrend : undefined);
-      const yAxisSuggestedMax = xySync.yMax ?? (isTrend ? yMaxTrend : undefined);
+      const yAxisSuggestedMax = xySync.yMax ?? (isTrend ?  yMaxTrend : undefined);
          // Note: yAxisSuggestedMax seems to have no effect for log axes.
       const xScale: any /* ChartJs.ScaleOptions<"linear"> | ChartJs.ScaleOptions<"logarithmic"> | ChartJs.ScaleOptions<"time"> */ = {  // TODO: Remove <any> after Chart.js v3.0.0-beta.7
          type: <any>xAxisType,

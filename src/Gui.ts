@@ -252,6 +252,20 @@ function genRegionTable() {
    const selection = Selection.createSelection(selParms);
    renderRegionTable(selection, selParms.sortOrder); }
 
+function saveInputParms() {
+   // Currently we save only the "continent" parameter.
+   const continent = DomUtils.getValue("continent");
+   localStorage.setItem("continent", continent); }
+
+function restoreInputParms() {
+   const continent = localStorage.getItem("continent");
+   if (continent) {
+      DomUtils.setValue("continent", continent); }}
+
+function onInputParmsChanged() {
+   saveInputParms();
+   genRegionTable(); }
+
 /*
 function inputParms_keyDown (event: KeyboardEvent) {
    const keyName = MiscUtils.genKeyName(event);
@@ -264,8 +278,9 @@ export function init() {
    DomUtils.setValueNum("minDeaths", 3000);
    DomUtils.addNumericFieldFormatSwitcher("minPopulation");
    DomUtils.addNumericFieldFormatSwitcher("minDeaths");
+   restoreInputParms();
    genRegionTable();
    document.getElementById("dataAsOf")!.textContent = formatDateIso(DataSource.lastDay);
 // document.getElementById("applyButton")!.addEventListener("click", () => catchError(genRegionTable));
 // document.getElementById("inputParms")!.addEventListener("keydown", (event: KeyboardEvent) => catchError(inputParms_keyDown, event));
-   document.getElementById("inputParms")!.addEventListener("change", () => catchError(genRegionTable)); }
+   document.getElementById("inputParms")!.addEventListener("change", () => catchError(onInputParmsChanged)); }

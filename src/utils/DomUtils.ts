@@ -29,6 +29,9 @@ export function getValue (elementId: string) : string {
    checkValidity(e);
    return e.value; }
 
+export function setValue (elementId: string, newValue: string) {
+   getInputElement(elementId).value = newValue; }
+
 export function getValueNumOpt (elementId: string) : number | undefined {
    const e = getInputElement(elementId);
    checkValidity(e);
