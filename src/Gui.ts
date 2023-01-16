@@ -275,7 +275,7 @@ function inputParms_keyDown (event: KeyboardEvent) {
 
 export function init() {
    DomUtils.setValueNum("minPopulation", 1000000);
-   DomUtils.setValueNum("minDeaths", 3000);
+   DomUtils.setValueNum("minDeaths", 1000);
    DomUtils.addNumericFieldFormatSwitcher("minPopulation");
    DomUtils.addNumericFieldFormatSwitcher("minDeaths");
    restoreInputParms();
